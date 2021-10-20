@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd" >
+<sqlMap namespace="SmartPhoneManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="smartPhoneSearchVO" type="kr.co.irlink.zirecx.smart.service.SmartPhoneSearchVO"/>
+	<typeAlias  alias="cmnUserSearchVO" type="kr.co.irlink.zirecx.common.service.CmnUserSearchVO"/>
+
+	<!-- 스마트폰관리 리스트 -->
+	<select id="smartPhoneManageDAO.selectSmartPhoneManageList" parameterClass="smartPhoneSearchVO" resultClass="egovMap">
+		SELECT * FROM(
+			SELECT ROW_NUMBER() OVER(order by id) AS rownum, * FROM(
+				SELECT 
+					a.id, dbo.usp_get_group_upper2(a.groupId) groupId, a.phoneNumber, a.imei, a.dateUpdated, a.useStatusFlag, b.firstname AS updateUserId, a.memo
+				FROM orksmartphone a, orkuser b, orkloginstring c
+				WHERE a.updateUserId = b.id
+				AND b.id = c.user_id
+				<isNotEmpty property="groupId">
+					AND a.groupId = #groupId#
+				</isNotEmpty>
+				
+				<isNotEmpty property="phoneNumber">
+					AND a.phoneNumber like ('%' + #phoneNumber# + '%' )
+				</isNotEmpty>
+				
+				<isNotEmpty property="imei">
+					AND a.imei like ('%' + #imei# + '%' )
+				</isNotEmpty>
+				
+				<isNotEmpty property="schUserName">
+					AND b.firstname = #schUserName#
+				</isNotEmpty>
+				
+				<isNotEmpty property="updateUserId">
+					AND c.zirecxId = #schUserZirecxId# 
+				</isNotEmpty>
+		
+			  	<isEqual property="useStatusFlag" compareValue="Y">
+					AND a.useStatusFlag = 'Y' 
+			  	</isEqual>
+			  	<isEqual property="useStatusFlag" compareValue="N">
+					AND a.useStatusFlag = 'N'
+			  	</isEqual>
+			  	
+			  	<isNotEmpty property="arrSelectedId">
+			  		AND a.id IN 
+					<iterate property="arrSelectedId" open="(" close=")" conjunction="," >
+				  		#arrSelectedId[]# 
+					</iterate>
+				</isNotEmpty>
+			) r1
+		) t1
+		WHERE t1.rownum BETWEEN #firstIndex# AND #lastIndex#
+<!-- 		ORDER BY $orderKey$ $orderType$, $orderKeyDate$ $orderTypeDate$ -->
+		ORDER BY $orderKey$ $orderType$
+	</select>
+	
+	<!-- 스마트폰관리 리스트 -->
+	<select id="smartPhoneManageDAO.selectSmartPhoneManageExcelList" parameterClass="smartPhoneSearchVO" resultClass="egovMap">
+		SELECT * FROM(
+			SELECT ROW_NUMBER() OVER(order by id) AS rownum, * FROM(
+				SELECT 
+					a.id, dbo.usp_get_group_upper2(a.groupId) groupId, a.phoneNumber, a.imei, a.dateUpdated, a.useStatusFlag, b.firstname AS updateUserId, a.memo
+				FROM orksmartphone a, orkuser b, orkloginstring c
+				WHERE a.updateUserId = b.id
+				AND b.id = c.user_id
+				<isNotEmpty property="groupId">
+					AND a.groupId = #groupId#
+				</isNotEmpty>
+				
+				<isNotEmpty property="phoneNumber">
+					AND a.phoneNumber like ('%' + #phoneNumber# + '%' )
+				</isNotEmpty>
+				
+				<isNotEmpty property="imei">
+					AND a.imei like ('%' + #imei# + '%' )
+				</isNotEmpty>
+				
+				<isNotEmpty property="schUserName">
+					AND b.firstname = #schUserName#
+				</isNotEmpty>
+				
+				<isNotEmpty property="updateUserId">
+					AND c.zirecxId = #schUserZirecxId# 
+				</isNotEmpty>
+		
+			  	<isEqual property="useStatusFlag" compareValue="Y">
+					AND a.useStatusFlag = 'Y' 
+			  	</isEqual>
+			  	<isEqual property="useStatusFlag" compareValue="N">
+					AND a.useStatusFlag = 'N'
+			  	</isEqual>
+			  	
+			  	<isNotEmpty property="arrSelectedId">
+			  		AND a.id IN 
+					<iterate property="arrSelectedId" open="(" close=")" conjunction="," >
+				  		#arrSelectedId[]# 
+					</iterate>
+				</isNotEmpty>
+			) r1
+		) t1
+		ORDER BY $orderKey$ $orderType$
+	</select>
+	
+	
+	
+	<!-- 스마트폰 상세정보 -->
+	<select id="smartPhoneManageDAO.selectSmartPhoneDetail" parameterClass="smartPhoneSearchVO" resultClass="egovMap">
+		SELECT
+			c.groupName, a.groupId, a.phoneNumber, a.imei, a.useStatusFlag, a.memo, a.id
+		FROM orksmartphone a, orkuser b, orkgroup c
+		WHERE a.updateUserId = b.id
+		AND a.groupId = c.id
+		AND a.phoneNumber = #phoneNumber#
+	</select>
+	
+	<!-- 스마트폰 수정 -->
+	<update id="smartPhoneManageDAO.updateSmartPhone" parameterClass="smartPhoneSearchVO">
+		UPDATE orksmartphone SET
+			groupId = #groupId#
+			,phoneNumber = #phoneNumber#
+			,imei = #imei#
+			,useStatusFlag = #useStatusFlag#
+			,memo = #memo#
+			<!-- ,updateUserId = #updateUserId# -->
+			,dateUpdated = getdate()
+		WHERE id = #id#
+		AND updateUserId = #updateUserId#
+	</update>
+	
+	<!-- 관리자용 스마트폰 수정 -->
+	<update id="smartPhoneManageDAO.updateAdminSmartPhone" parameterClass="smartPhoneSearchVO">
+		UPDATE orksmartphone SET
+			groupId = #groupId#
+			,phoneNumber = #phoneNumber#
+			,imei = #imei#
+			,useStatusFlag = #useStatusFlag#
+			,memo = #memo#
+			,dateUpdated = getdate()
+		WHERE id = #id#
+	</update>
+	
+	<!-- 스마트폰 총 갯수 -->
+	<select id="smartPhoneManageDAO.selectSmartPhoneCnt"  parameterClass="smartPhoneSearchVO" resultClass="int">
+		SELECT
+			COUNT(*)
+		FROM orksmartphone a, orkuser b, orkloginstring c
+		WHERE a.updateUserId = b.id
+		AND b.id = c.user_id
+		<isNotEmpty property="groupId">
+			AND a.groupId = #groupId#
+		</isNotEmpty>
+		
+		<isNotEmpty property="phoneNumber">
+			AND a.phoneNumber like ('%' + #phoneNumber# + '%' )
+		</isNotEmpty>
+		
+		<isNotEmpty property="imei">
+			AND a.imei like ('%' + #imei# + '%' )
+		</isNotEmpty>
+		
+		<isNotEmpty property="updateUserId">
+			AND c.zirecxId = #schUserZirecxId# 
+		</isNotEmpty>
+
+	  	<isEqual property="useStatusFlag" compareValue="Y">
+			AND a.useStatusFlag = 'Y' 
+	  	</isEqual>
+	  	<isEqual property="useStatusFlag" compareValue="N">
+			AND a.useStatusFlag = 'N'
+	  	</isEqual>
+	</select>
+	
+	<!-- 스마트폰 생성 -->
+	<insert id="smartPhoneManageDAO.insertSmartPhone" parameterClass="smartPhoneSearchVO">
+		<selectKey keyProperty="id" resultClass="int">
+			INSERT INTO orksmartphone(groupId, phoneNumber, imei, useStatusFlag, memo, updateUserId, dateUpdated, dateCreated) 
+			VALUES(#groupId#, #phoneNumber#, #imei#, #useStatusFlag#, #memo#, #updateUserId#, getdate(), getdate())
+		
+			SELECT SCOPE_IDENTITY() as id
+		</selectKey>
+	</insert>
+	
+	<!-- 스마트폰 생성 히스토리 -->
+	<insert id="smartPhoneManageDAO.insertSmartPhoneHistory" parameterClass="smartPhoneSearchVO">
+		INSERT INTO orksmartphonehistory(
+			id, groupId, phoneNumber, imei, useStatusFlag, memo, 
+			updateUserId, dateUpdated, dateCreated
+		) 
+		SELECT
+			id, groupId, phoneNumber, imei, useStatusFlag, memo, 
+			updateUserId, getdate(), getdate()
+		FROM orksmartphone
+		WHERE id = #id#
+	</insert>
+	
+	
+	<!-- 스마트폰 작업자, 총무 권한 리스트  -->
+	<select id="smartPhoneManageDAO.selectSmartPhoneUserList" parameterClass="cmnUserSearchVO" resultClass="egovMap">
+		<![CDATA[
+			  SELECT usr.id, login.zirecxId, usr.firstname
+			  FROM orkuser usr, orkloginstring login, orkgroup grp, orkgrouptouser gtu 
+			  WHERE usr.id = login.user_id  
+			  AND grp.id = gtu.groupId  
+			  AND gtu.userId = usr.id  
+			  AND grp.securityGroup = 1  
+			  AND usr.deleted = 0 
+			  AND grp.id = 246
+		]]>
+		
+		<isNotEmpty property="userSearchSeq">
+				AND login.zirecxId = #userSearchSeq#
+			</isNotEmpty>
+			<isNotEmpty property="userSearchName">
+				AND usr.firstname LIKE (#userSearchName# + '%')
+			</isNotEmpty>
+			
+			<isEqual property="strSessionLoginString" compareValue="admin">
+				<isNotEmpty property="strSessionGroupId">
+					AND grp.id = #strSessionGroupId#
+				</isNotEmpty>
+		</isEqual>
+		ORDER BY usr.id ASC
+	</select>
+</sqlMap>

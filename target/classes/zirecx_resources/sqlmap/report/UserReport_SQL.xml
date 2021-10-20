@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="RecordManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="userReportVO" type="kr.co.irlink.zirecx.report.service.UserReportVO"/>
+	
+	<select id="userReportDAO.selectUserReport02" parameterClass="userReportVO" resultClass="egovMap">
+		SELECT 
+			  usr.id
+			, dbo.usp_get_group_path(gtu.groupId) groupId
+			, usr.firstName, login.zirecxId
+			, usr.phonenumber 
+			, SUM(ISNULL(rep.out_duration_call, 0)) AS dur_call_out
+			, SUM(ISNULL(rep.in_duration_call, 0)) AS dur_call_in
+			, SUM(ISNULL(rep.out_duration_talk, 0)) AS dur_talk_out
+			, SUM(ISNULL(rep.in_duration_talk, 0)) AS dur_talk_in
+			, SUM(ISNULL(rep.out_duration_ring, 0)) AS dur_ring_out
+			, SUM(ISNULL(rep.in_duration_ring, 0)) AS dur_ring_in
+			, SUM(ISNULL(rep.out_duration_wrapup, 0)) AS dur_wrapup_out 
+			, SUM(ISNULL(rep.in_duration_wrapup, 0)) AS dur_wrapup_in
+			, SUM(ISNULL(rep.out_duration_idle, 0)) AS dur_idle_out
+			, SUM(ISNULL(rep.out_duration_standby,0)) AS dur_standby_out
+			, SUM(ISNULL(rep.out_count_call, 0)) AS cnt_call_out
+			, SUM(ISNULL(rep.in_count_call,0)) AS cnt_call_in
+			, SUM(ISNULL(rep.out_count_call_connect,0)) AS cnt_connect_out
+			, SUM(ISNULL(rep.in_count_call_connect, 0)) AS cnt_connect_in  
+		FROM orkuser usr 
+		LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id 
+		LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id
+		LEFT OUTER JOIN orkreportdaily rep 
+		        	 ON rep.zirecxId = login.zirecxId
+		        	AND rep.call_date BETWEEN '20130801' AND '20130831'
+		, orkgroup grp
+		WHERE grp.id = gtu.groupId
+		AND grp.securityGroup = 0
+		group by usr.id, dbo.usp_get_group_path(gtu.groupId), usr.firstName, login.zirecxId, usr.phonenumber
+	</select>
+	
+</sqlMap>

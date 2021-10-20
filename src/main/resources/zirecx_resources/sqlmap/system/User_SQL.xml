@@ -1,0 +1,647 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="UserManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="userSearchVO" type="kr.co.irlink.zirecx.system.service.UserSearchVO"/>
+	<typeAlias  alias="userDetailVO" type="kr.co.irlink.zirecx.system.service.UserDetailVO"/>
+	
+	<resultMap id="webPathMap" class="kr.co.irlink.zirecx.system.service.UserSearchVO">
+		<result property="rownum"  column="rownum"/>
+		<result property="userId"  column="id"/>
+		<result property="groupName"  column="groupName"/>
+	  	<result property="zirecxId"  column="zirecxId"/>
+	  	<result property="userName" column="firstname"/>
+	  	<result property="deleteYn"  column="deleted"/>
+	  	<result property="recordYn"  column="recordable"/>
+	</resultMap>
+	
+	<resultMap id="webDetailPathMap" class="kr.co.irlink.zirecx.system.service.UserDetailVO">
+		<result property="groupname"  column="groupname"/>
+		<result property="zirecxId"  column="zirecxId"/>
+	  	<result property="firstname"  column="firstname"/>
+	  	<result property="recordable"  column="recordable"/>
+	  	<result property="deleted"  column="deleted"/>
+	  	<result property="grpId"  column="grpId"/>
+	  	<result property="usrId"  column="usrId"/>
+	  	<result property="phonenumber"  column="phonenumber"/>
+	  	<result property="depth"  column="depth"/>
+	  	<result property="sortOrder"  column="sortOrder"/>
+	  	<result property="useMonitoring"  column="useMonitoring"/>
+	  	<result property="loginstring"  column="loginstring"/>
+	  	<result property="userId"  column="userId"/>
+	  	<result property="securityGroupName"  column="securityGroupName"/>
+	  	<result property="logoutSupported"  column="logoutSupported"/>
+	  	<result property="autoUploadSupported"  column="autoUploadSupported"/>
+	  	<result property="phonenumberOffice1"  column="phonenumberOffice1"/>
+	  	<result property="phonenumberOffice2"  column="phonenumberOffice2"/>
+	</resultMap>
+	
+	
+	<select id="userManageDAO.selectUserList" parameterClass="userSearchVO" resultMap="webPathMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY $orderKey$ $orderType$)  AS rownum, * FROM (
+				SELECT
+					usr.id, grp.groupName, login.zirecxId, usr.firstname, usr.deleted, usr.recordable    
+				FROM orkgroup (NOLOCK) grp, orkuser (NOLOCK) usr, orkloginstring (NOLOCK) login     
+				LEFT OUTER JOIN orkgrouptouser gtu ON login.user_id = gtu.userid     
+				WHERE usr.id = login.user_id     
+				AND grp.id = gtu.groupid     
+				AND grp.securitygroup = 0
+				
+				<![CDATA[
+				AND (
+					SELECT sortOrder FROM orkgroup a, orkgrouptouser b
+					WHERE a.id = b.groupId
+					AND a.securityGroup = 1
+					AND b.userId = usr.id
+				) >= #strLoginUserAuth#
+				]]>
+				
+				<!-- 권한관련 시작 -->
+				<isNotEqual property="strSessionLoginString" compareValue="admin">
+					<isEqual property="strAccessPolicy" compareValue="group">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					 		#arrGroupSeq[]# 
+						</iterate>
+					</isEqual>
+					
+					<!--  2.0 추가   -->
+					<isNotEqual property="strAccessPolicy" compareValue="group">
+						<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+							<isNotEqual property="strAccessPolicy" compareValue="all">
+								AND login.zirecxId = #zirecxId#
+							</isNotEqual>
+						</isNotEqual>
+						
+						<!-- 김해동 추가  -->
+						<isEqual property="strAccessPolicy" compareValue="groupUp">
+							AND grp.id IN 
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+							</iterate>
+						</isEqual>
+						<!--  끝  -->
+					</isNotEqual>
+					
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isNotEqual>
+			
+				<isEqual property="strSessionLoginString" compareValue="admin">
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isEqual>
+				<!-- 권한관련 끝 -->
+			
+				<isNotEmpty property="schUserZirecxId">
+					AND login.zirecxId = #schUserZirecxId#
+				</isNotEmpty>
+				<isNotEmpty property="schEndPointId">
+					AND login.loginstring = #schEndPointId#
+				</isNotEmpty>
+				<isNotEmpty property="schUserName">
+					AND usr.firstname = #schUserName#
+				</isNotEmpty>
+				<isNotEmpty property="schGroupId">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				    	 #arrGroupSeq[]# 
+				    </iterate>
+				</isNotEmpty>
+			) r1
+		) t1
+		WHERE t1.rownum BETWEEN #firstIndex# AND #lastIndex#
+	</select>
+	
+	<select id="userManageDAO.selectAllUserList" parameterClass="userSearchVO" resultMap="webPathMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY $orderKey$ $orderType$)  AS rownum, * FROM (
+				SELECT
+					usr.id, grp.groupName, login.zirecxId, usr.firstname, usr.deleted, usr.recordable    
+				FROM orkgroup (NOLOCK) grp, orkuser (NOLOCK) usr, orkloginstring (NOLOCK) login     
+				LEFT OUTER JOIN orkgrouptouser gtu ON login.user_id = gtu.userid     
+				WHERE usr.id = login.user_id     
+				AND grp.id = gtu.groupid     
+				AND grp.securitygroup = 0
+				
+				<![CDATA[
+				AND (
+					SELECT sortOrder FROM orkgroup a, orkgrouptouser b
+					WHERE a.id = b.groupId
+					AND a.securityGroup = 1
+					AND b.userId = usr.id
+				) >= 10
+				]]>
+				
+				<!-- 권한관련 시작 -->
+				<isNotEqual property="strSessionLoginString" compareValue="admin">
+					<isEqual property="strAccessPolicy" compareValue="group">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					 		#arrGroupSeq[]# 
+						</iterate>
+					</isEqual>
+					<isNotEqual property="strAccessPolicy" compareValue="group">
+						<isNotEqual property="strAccessPolicy" compareValue="all">
+							AND login.zirecxId = #zirecxId#<!--AND login.zirecxId = #zirecxId#-->
+						</isNotEqual>
+					</isNotEqual>
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isNotEqual>
+			
+				<isEqual property="strSessionLoginString" compareValue="admin">
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isEqual>
+				<!-- 권한관련 끝 -->
+			
+				<isNotEmpty property="schUserZirecxId">
+					AND login.zirecxId = #schUserZirecxId#
+				</isNotEmpty>
+				<isNotEmpty property="schEndPointId">
+					AND login.loginstring = #schEndPointId#
+				</isNotEmpty>
+				<isNotEmpty property="schUserName">
+					AND usr.firstname = #schUserName#
+				</isNotEmpty>
+				<isNotEmpty property="schGroupId">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				    	 #arrGroupSeq[]# 
+				    </iterate>
+				</isNotEmpty>
+			) r1
+		) t1
+		WHERE t1.rownum BETWEEN #firstIndex# AND #lastIndex#
+	</select>
+	
+	<select id="userManageDAO.selectUserCnt" parameterClass="userSearchVO" resultClass="int">
+		SELECT
+			COUNT(*)
+		FROM orkgroup (NOLOCK) grp, orkuser (NOLOCK) usr, orkloginstring (NOLOCK) login     
+		LEFT OUTER JOIN orkgrouptouser gtu ON login.user_id = gtu.userid     
+		WHERE usr.id = login.user_id     
+		AND grp.id = gtu.groupid     
+		AND grp.securitygroup = 0
+		
+		<![CDATA[
+		AND (
+			SELECT sortOrder FROM orkgroup a, orkgrouptouser b
+			WHERE a.id = b.groupId
+			AND a.securityGroup = 1
+			AND b.userId = usr.id
+		) >= #strLoginUserAuth#
+		]]>	
+		<!-- 권한관련 시작 -->
+		<isNotEqual property="strSessionLoginString" compareValue="admin">
+			<isEqual property="strAccessPolicy" compareValue="group">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			 		#arrGroupSeq[]# 
+				</iterate>
+			</isEqual>
+			
+			<!--  2.0 추가  -->
+			<isNotEqual property="strAccessPolicy" compareValue="group">
+				<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+					<isNotEqual property="strAccessPolicy" compareValue="all">
+						AND login.zirecxId = #zirecxId#
+					</isNotEqual>
+				</isNotEqual>
+				
+				<!-- 김해동 추가  -->
+				<isEqual property="strAccessPolicy" compareValue="groupUp">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+					</iterate>
+				</isEqual>
+				<!--  끝  -->
+			</isNotEqual>
+			
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isNotEqual>
+	
+		<isEqual property="strSessionLoginString" compareValue="admin">
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isEqual>
+		<!-- 권한관련 끝 -->
+	
+		<isNotEmpty property="schUserZirecxId">
+			AND login.zirecxId = #schUserZirecxId#
+		</isNotEmpty>
+		<isNotEmpty property="schEndPointId">
+			AND login.loginstring = #schEndPointId#
+		</isNotEmpty>
+		<isNotEmpty property="schUserName">
+			AND usr.firstname = #schUserName#
+		</isNotEmpty>
+		<isNotEmpty property="schGroupId">
+			AND grp.id IN 
+			<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+		    	 #arrGroupSeq[]# 
+		    </iterate>
+		</isNotEmpty>
+	</select>
+	
+	<select id="userManageDAO.selectAllUserCnt" parameterClass="userSearchVO" resultClass="int">
+		SELECT
+			COUNT(*)
+		FROM orkgroup (NOLOCK) grp, orkuser (NOLOCK) usr, orkloginstring (NOLOCK) login     
+		LEFT OUTER JOIN orkgrouptouser gtu ON login.user_id = gtu.userid     
+		WHERE usr.id = login.user_id     
+		AND grp.id = gtu.groupid     
+		AND grp.securitygroup = 0
+		
+		<![CDATA[
+		AND (
+			SELECT sortOrder FROM orkgroup a, orkgrouptouser b
+			WHERE a.id = b.groupId
+			AND a.securityGroup = 1
+			AND b.userId = usr.id
+		) >= 10
+		]]>	
+		<!-- 권한관련 시작 -->
+		<isNotEqual property="strSessionLoginString" compareValue="admin">
+			<isEqual property="strAccessPolicy" compareValue="group">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			 		#arrGroupSeq[]# 
+				</iterate>
+			</isEqual>
+			<isNotEqual property="strAccessPolicy" compareValue="group">
+				<isNotEqual property="strAccessPolicy" compareValue="all">
+					AND login.zirecxId = #zirecxId#<!--AND login.zirecxId = #zirecxId#-->
+				</isNotEqual>
+			</isNotEqual>
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isNotEqual>
+	
+		<isEqual property="strSessionLoginString" compareValue="admin">
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isEqual>
+		<!-- 권한관련 끝 -->
+	
+		<isNotEmpty property="schUserZirecxId">
+			AND login.zirecxId = #schUserZirecxId#
+		</isNotEmpty>
+		<isNotEmpty property="schEndPointId">
+			AND login.loginstring = #schEndPointId#
+		</isNotEmpty>
+		<isNotEmpty property="schUserName">
+			AND usr.firstname = #schUserName#
+		</isNotEmpty>
+		<isNotEmpty property="schGroupId">
+			AND grp.id IN 
+			<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+		    	 #arrGroupSeq[]# 
+		    </iterate>
+		</isNotEmpty>
+	</select>
+	
+	<select id="userManageDAO.selectUserDetail" parameterClass="userSearchVO" resultMap="webDetailPathMap">
+		<![CDATA[
+			SELECT * FROM 
+				(SELECT grp.groupname, login.zirecxId, usr.firstname, usr.recordable, usr.deleted
+				,grp.id AS grpId, usr.id as usrId, usr.phonenumber, grp.depth, grp.sortOrder, usr.useMonitoring, login.loginstring
+				,usr.logoutSupported, usr.autoUploadSupported, usr.phonenumberOffice1, usr.phonenumberOffice2
+				FROM orkgroup grp, orkuser usr, orkloginstring login
+				LEFT OUTER JOIN orkgrouptouser gtu ON login.user_id = gtu.userid
+				WHERE usr.id = login.user_id
+				AND grp.id = gtu.groupid
+				AND grp.securitygroup = 0
+				AND usr.id = #userId#) a, 
+				(SELECT b.userId AS userId, a.id AS securityGroupName FROM orkgroup a, orkgrouptouser b WHERE a.securitygroup = 1 AND a.id = b.groupId) b
+			WHERE a.usrId = b.userId
+		]]>
+	</select>
+	
+	<select id="userManageDAO.selectAuthList" parameterClass="userSearchVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT id AS groupId, groupName
+			FROM orkgroup
+			WHERE securitygroup = 1
+			AND deleted = 0
+			AND id NOT IN (1,2,3,4)
+			AND sortOrder >= #strLoginUserAuth#
+			ORDER BY sortOrder asc
+		]]>
+	</select>
+	
+	<select id="userManageDAO.selectAllAuthList" parameterClass="userSearchVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT id AS groupId, groupName
+			FROM orkgroup
+			WHERE securitygroup = 1
+			AND deleted = 0
+			AND id NOT IN (1,2,3,4)
+			AND sortOrder >= 10
+			ORDER BY sortOrder asc
+		]]>
+	</select>
+	
+	<select id="userManageDAO.selectLoginUserAuth" parameterClass="userSearchVO" resultClass="String">
+		SELECT c.sortOrder
+		FROM orkloginstring a, orkgrouptouser b, orkgroup c
+		WHERE a.user_id = b.userId
+		AND b.groupId = c.id
+		AND securityGroup = 1
+		AND a.zirecxId = #zirecxId#
+	</select>
+	
+	<update id="userManageDAO.updateUserOrkuser" parameterClass="userDetailVO">
+		UPDATE orkuser SET
+			firstname = #firstname#
+			,phonenumber = #phonenumber#
+			,recordable = #iRecordable#
+			,deleted = #iDeleted#
+			,logoutSupported =  #iLogoutSupported#
+			,autoUploadSupported =  #iAutoUploadSupported#
+			,phonenumberOffice1 = #phonenumberOffice1#
+			,phonenumberOffice2 = #phonenumberOffice2#
+		WHERE id = #userId#
+	</update>
+	
+	<update id="userManageDAO.updateUserOrkloginstring" parameterClass="userDetailVO">
+		UPDATE orkloginstring SET
+			loginstring = #loginstring#
+			,zirecxId =  #zirecxId#
+		WHERE user_id = #userId#
+	</update>
+	
+	<insert id="userManageDAO.insertUser" parameterClass="userDetailVO">
+		<selectKey keyProperty="id" resultClass="int">
+			INSERT INTO orkuser (password, firstname, phonenumber, recordable, deleted, logoutSupported, autoUploadSupported, phonenumberOffice1, phonenumberOffice2) 
+			VALUES('welcome', #firstname#, #phonenumber#, #iRecordable#, #iDeleted#, #iLogoutSupported#,#iAutoUploadSupported#, #phonenumberOffice1#, #phonenumberOffice2#)
+
+			SELECT SCOPE_IDENTITY() as id
+		</selectKey>
+	</insert>
+	
+	<insert id="userManageDAO.insertUserHistory" parameterClass="userDetailVO">
+		INSERT INTO orkuserhistory (
+			id, phoneNumber, password, firstname, recordable, dateCreated, dateDeleted, dateDisabled, dateUpdated, deleted, 
+			disabled, useMonitoring, logoutSupported, autoUploadSupported, appVer, osVer, IMEI, modelNo, resetDate, pinNumber, 
+			resetPasswordFlag, salt, resetLimitCount, phoneNumberOffice1, phoneNumberOffice2, insertDate
+		)
+		SELECT
+			id, phoneNumber, password, firstname, recordable, dateCreated, dateDeleted, dateDisabled, dateUpdated, deleted, 
+			disabled, useMonitoring, logoutSupported, autoUploadSupported, appVer, osVer, IMEI, modelNo, resetDate, pinNumber, 
+			resetPasswordFlag, salt, resetLimitCount, phoneNumberOffice1, phoneNumberOffice2, getdate()
+		FROM orkuser
+		WHERE id = #userId#
+	</insert>
+	
+	<insert id="userManageDAO.insertLoginstring" parameterClass="userDetailVO">
+		<![CDATA[
+			INSERT INTO orkloginstring (loginString, user_id, zirecxid) 
+			VALUES(#loginstring#, #userId#, #zirecxId#)
+		]]>
+	</insert>
+	
+	<insert id="userManageDAO.insertLoginstringHistory" parameterClass="userDetailVO">
+		INSERT INTO orkloginstringhistory (
+			id, loginString, domain_id, user_id, zirecxId, zirecxIdExternal, insertDate
+		)
+		SELECT
+			id, loginString, domain_id, user_id, zirecxId, zirecxIdExternal, getDate()
+		FROM orkloginstring
+		WHERE user_id = #userId#
+	</insert>
+	
+	<select id="userManageDAO.checkEndPointId" parameterClass="String" resultClass="int">
+		<![CDATA[
+			SELECT COUNT(*) cnt
+			FROM orkloginstring
+			WHERE loginstring = #loginstring#
+		]]>				
+	</select>
+	
+	<select id="userManageDAO.checkZirecxId" parameterClass="String" resultClass="int">
+		<![CDATA[
+			SELECT COUNT(*) cnt
+			FROM orkloginstring
+			WHERE zirecxId = #zirecxId#
+		]]>				
+	</select>
+	
+	<delete id="userManageDAO.deleteGrpToUsr" parameterClass="userDetailVO">
+		<![CDATA[
+			DELETE FROM orkgrouptouser 
+			WHERE userId = #userId#
+		]]>
+	</delete>
+	
+	<insert id="userManageDAO.insertGrpToUsr1" parameterClass="userDetailVO">
+		<![CDATA[
+			INSERT INTO orkgrouptouser (groupId, userId) VALUES(#grpId#, #userId#)
+		]]>
+	</insert>
+	
+	<insert id="userManageDAO.insertGrpToUsr2" parameterClass="userDetailVO">
+		<![CDATA[
+			INSERT INTO orkgrouptouser (groupId, userId) VALUES(#securityGroupName#, #userId#)
+		]]>
+	</insert>
+	
+	<select id="userManageDAO.selectUserGraphDay" parameterClass="userSearchVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT date_format(call_date, '%Y-%m-%d') AS callDate
+			, ISNULL(SUM(out_count_call + in_count_call), 0) AS totalCall
+			, ISNULL(SUM(out_duration_call + in_duration_call), 0) AS totalDuration
+			, ISNULL(floor(SUM(out_duration_call + in_duration_call) / SUM(out_count_call + in_count_call)),0) as aveg 
+			FROM orkreportdaily
+			WHERE call_date BETWEEN date_format(CURRENT_DATE - INTERVAL 7 DAY, '%Y%m%d') 
+			AND date_format(CURRENT_DATE - INTERVAL 1 DAY, '%Y%m%d')
+			AND zirecxid = #detailZirecxId#
+			GROUP BY call_date
+		]]>				
+	</select>
+	
+	<select id="userManageDAO.selectUserGraphWeek" parameterClass="userSearchVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT (DATE_FORMAT(A.START_DATE, '%Y-%m-%d') + ' ~ ' + DATE_FORMAT(A.END_DATE, '%Y-%m-%d')) AS callDate
+			, ISNULL(SUM(rpt.out_count_call + rpt.in_count_call),0) AS totalCall
+			, ISNULL(SUM(rpt.out_duration_call + rpt.in_duration_call),0) AS totalDuration
+			, ISNULL(floor(SUM(rpt.out_duration_call + rpt.in_duration_call) / SUM(rpt.out_count_call + rpt.in_count_call)),0) as aveg 
+			FROM orkreportdaily rpt,
+			(SELECT DATE_FORMAT(CASE WHEN DAYOFWEEK(CURRENT_DATE) = 1 THEN CURRENT_DATE - INTERVAL -21 DAY
+			WHEN DAYOFWEEK(CURRENT_DATE) = 2 THEN CURRENT_DATE - INTERVAL 22 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 3 THEN CURRENT_DATE - INTERVAL 23 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 4 THEN CURRENT_DATE - INTERVAL 24 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 5 THEN CURRENT_DATE - INTERVAL 25 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 6 THEN CURRENT_DATE - INTERVAL 26 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 7 THEN CURRENT_DATE - INTERVAL 27 DAY 
+			END, '%Y%m%d') AS START_DATE, 
+			DATE_FORMAT(CASE WHEN DAYOFWEEK(CURRENT_DATE) = 1 THEN CURRENT_DATE - INTERVAL 15 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 2 THEN CURRENT_DATE - INTERVAL 16 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 3 THEN CURRENT_DATE - INTERVAL 17 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 4 THEN CURRENT_DATE - INTERVAL 18 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 5 THEN CURRENT_DATE - INTERVAL 19 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 6 THEN CURRENT_DATE - INTERVAL 20 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 7 THEN CURRENT_DATE - INTERVAL 21 DAY 
+			END, '%Y%m%d') AS END_DATE) A
+			WHERE rpt.call_date between A.START_DATE AND A.END_DATE
+			AND zirecxid = #detailZirecxId#
+			
+			UNION ALL
+			
+			SELECT CONCAT(DATE_FORMAT(A.START_DATE, '%Y-%m-%d') + ' ~ ' + DATE_FORMAT(A.END_DATE, '%Y-%m-%d')) AS callDate
+			, ISNULL(SUM(rpt.out_count_call + rpt.in_count_call),0) AS totalCall
+			, ISNULL(SUM(rpt.out_duration_call + rpt.in_duration_call),0) AS totalDuration
+			, ISNULL(floor(SUM(rpt.out_duration_call + rpt.in_duration_call) / SUM(rpt.out_count_call + rpt.in_count_call)),0) as aveg 
+			FROM orkreportdaily rpt,
+			(SELECT DATE_FORMAT(CASE WHEN DAYOFWEEK(CURRENT_DATE) = 1 THEN CURRENT_DATE - INTERVAL -14 DAY
+			WHEN DAYOFWEEK(CURRENT_DATE) = 2 THEN CURRENT_DATE - INTERVAL 15 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 3 THEN CURRENT_DATE - INTERVAL 16 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 4 THEN CURRENT_DATE - INTERVAL 17 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 5 THEN CURRENT_DATE - INTERVAL 18 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 6 THEN CURRENT_DATE - INTERVAL 19 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 7 THEN CURRENT_DATE - INTERVAL 120 DAY 
+			END, '%Y%m%d') AS START_DATE, 
+			DATE_FORMAT(CASE WHEN DAYOFWEEK(CURRENT_DATE) = 1 THEN CURRENT_DATE - INTERVAL 8 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 2 THEN CURRENT_DATE - INTERVAL 9 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 3 THEN CURRENT_DATE - INTERVAL 10 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 4 THEN CURRENT_DATE - INTERVAL 11 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 5 THEN CURRENT_DATE - INTERVAL 12 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 6 THEN CURRENT_DATE - INTERVAL 13 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 7 THEN CURRENT_DATE - INTERVAL 14 DAY 
+			END, '%Y%m%d') AS END_DATE) A
+			WHERE rpt.call_date between A.START_DATE AND A.END_DATE
+			AND zirecxid = #detailZirecxId#
+			
+			UNION ALL
+			
+			SELECT (DATE_FORMAT(A.START_DATE, '%Y-%m-%d') + ' ~ ' + DATE_FORMAT(A.END_DATE, '%Y-%m-%d')) AS callDate
+			, ISNULL(SUM(rpt.out_count_call + rpt.in_count_call),0) AS totalCall
+			, ISNULL(SUM(rpt.out_duration_call + rpt.in_duration_call),0) AS totalDuration
+			, ISNULL(floor(SUM(rpt.out_duration_call + rpt.in_duration_call) / SUM(rpt.out_count_call + rpt.in_count_call)),0) as aveg 
+			FROM orkreportdaily rpt,
+			(SELECT DATE_FORMAT(CASE WHEN DAYOFWEEK(CURRENT_DATE) = 1 THEN CURRENT_DATE - INTERVAL -7 DAY
+			WHEN DAYOFWEEK(CURRENT_DATE) = 2 THEN CURRENT_DATE - INTERVAL 8 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 3 THEN CURRENT_DATE - INTERVAL 9 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 4 THEN CURRENT_DATE - INTERVAL 10 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 5 THEN CURRENT_DATE - INTERVAL 11 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 6 THEN CURRENT_DATE - INTERVAL 12 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 7 THEN CURRENT_DATE - INTERVAL 13 DAY 
+			END, '%Y%m%d') AS START_DATE, 
+			DATE_FORMAT(CASE WHEN DAYOFWEEK(CURRENT_DATE) = 1 THEN CURRENT_DATE - INTERVAL 1 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 2 THEN CURRENT_DATE - INTERVAL 2 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 3 THEN CURRENT_DATE - INTERVAL 3 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 4 THEN CURRENT_DATE - INTERVAL 4 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 5 THEN CURRENT_DATE - INTERVAL 5 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 6 THEN CURRENT_DATE - INTERVAL 6 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 7 THEN CURRENT_DATE - INTERVAL 7 DAY 
+			END, '%Y%m%d') AS END_DATE) A
+			WHERE rpt.call_date between A.START_DATE AND A.END_DATE
+			AND zirecxid = #detailZirecxId#
+			
+			UNION ALL
+			
+			SELECT (DATE_FORMAT(A.START_DATE, '%Y-%m-%d') + ' ~ ' + DATE_FORMAT(A.END_DATE, '%Y-%m-%d')) AS callDate
+			, ISNULL(SUM(rpt.out_count_call + rpt.in_count_call),0) AS totalCall
+			, ISNULL(SUM(rpt.out_duration_call + rpt.in_duration_call),0) AS totalDuration
+			, ISNULL(floor(SUM(rpt.out_duration_call + rpt.in_duration_call) / SUM(rpt.out_count_call + rpt.in_count_call)),0) as aveg 
+			FROM orkreportdaily rpt,
+			(SELECT DATE_FORMAT(CASE WHEN DAYOFWEEK(CURRENT_DATE) = 1 THEN CURRENT_DATE 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 2 THEN CURRENT_DATE - INTERVAL 1 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 3 THEN CURRENT_DATE - INTERVAL 2 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 4 THEN CURRENT_DATE - INTERVAL 3 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 5 THEN CURRENT_DATE - INTERVAL 4 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 6 THEN CURRENT_DATE - INTERVAL 5 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 7 THEN CURRENT_DATE - INTERVAL 6 DAY 
+			END, '%Y%m%d') AS START_DATE, 
+			DATE_FORMAT(CASE WHEN DAYOFWEEK(CURRENT_DATE) = 1 THEN CURRENT_DATE + INTERVAL 6 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 2 THEN CURRENT_DATE + INTERVAL 5 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 3 THEN CURRENT_DATE + INTERVAL 4 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 4 THEN CURRENT_DATE + INTERVAL 3 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 5 THEN CURRENT_DATE + INTERVAL 2 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 6 THEN CURRENT_DATE + INTERVAL 1 DAY 
+			WHEN DAYOFWEEK(CURRENT_DATE) = 7 THEN CURRENT_DATE 
+			END, '%Y%m%d') AS END_DATE) A
+			WHERE rpt.call_date between A.START_DATE AND A.END_DATE
+			AND zirecxid = #detailZirecxId#
+		]]>				
+	</select>
+	
+	<select id="userManageDAO.selectUserGraphMonth" parameterClass="userSearchVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT DATE_FORMAT(CURRENT_DATE - INTERVAL 2 MONTH, '%Y-%m') AS callDate
+			, ISNULL(SUM(out_count_call + in_count_call) ,0) AS totalCall
+			, ISNULL(SUM(out_duration_call + in_duration_call), 0) AS totalDuration
+			, ISNULL(floor(SUM(out_duration_call + in_duration_call) / SUM(out_count_call + in_count_call)),0) as aveg 
+			FROM orkreportdaily
+			WHERE call_date BETWEEN (DATE_FORMAT(CURRENT_DATE - INTERVAL 2 MONTH, '%Y%m') + '01')
+			AND (DATE_FORMAT(CURRENT_DATE - INTERVAL 2 MONTH, '%Y%m') + '31')
+			AND zirecxid = #detailZirecxId#
+			
+			UNION ALL
+			
+			SELECT DATE_FORMAT(CURRENT_DATE - INTERVAL 1 MONTH, '%Y-%m') AS callDate
+			, ISNULL(SUM(out_count_call + in_count_call) ,0) AS totalCall
+			, ISNULL(SUM(out_duration_call + in_duration_call), 0) AS totalDuration
+			, ISNULL(floor(SUM(out_duration_call + in_duration_call) / SUM(out_count_call + in_count_call)),0) as aveg 
+			FROM orkreportdaily
+			WHERE call_date BETWEEN (DATE_FORMAT(CURRENT_DATE - INTERVAL 1 MONTH, '%Y%m') + '01')
+			AND (DATE_FORMAT(CURRENT_DATE - INTERVAL 1 MONTH, '%Y%m') + '31')
+			AND zirecxid = #detailZirecxId#
+			
+			UNION ALL
+			
+			SELECT DATE_FORMAT(CURRENT_DATE, '%Y-%m') AS callDate
+			, ISNULL(SUM(out_count_call + in_count_call) ,0) AS totalCall
+			, ISNULL(SUM(out_duration_call + in_duration_call), 0) AS totalDuration
+			, ISNULL(floor(SUM(out_duration_call + in_duration_call) / SUM(out_count_call + in_count_call)),0) as aveg 
+			FROM orkreportdaily
+			WHERE call_date BETWEEN (DATE_FORMAT(CURRENT_DATE, '%Y%m') + '01')
+			AND (DATE_FORMAT(CURRENT_DATE, '%Y%m') + '31')
+			AND zirecxid = #detailZirecxId#
+		]]>				
+	</select>
+	
+	<update id="userManageDAO.updateUserPasswordInit" parameterClass="userDetailVO">
+		UPDATE orkuser SET
+			password = 'welcome',
+			salt = ''
+		WHERE id = #userId#
+	</update>
+</sqlMap>

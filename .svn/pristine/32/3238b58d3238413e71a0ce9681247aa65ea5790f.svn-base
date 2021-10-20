@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="CampaignManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="campaignPopSearchVO" type="kr.co.irlink.zirecx.common.service.CampaignPopSearchVO"/>
+
+	<resultMap id="campaignMap" class="kr.co.irlink.zirecx.common.service.CampaignPopSearchVO">
+		<result property="code"		column="code"/>
+		<result property="name"		column="name"/>
+	</resultMap>
+	
+	<select id="campaignPopDAO.selectCampaignPopList" parameterClass="campaignPopSearchVO" resultMap="campaignMap">
+		<![CDATA[
+			SELECT code, name
+			FROM orkcampaign
+			WHERE deleted = 0
+		]]>
+		
+		<isNotEmpty property="strCampName">
+			AND name like #strCampName#
+		</isNotEmpty>
+		
+			ORDER BY name, dateCreated ASC
+		
+	</select>
+	
+</sqlMap>

@@ -1,0 +1,1411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="RecordManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="recordSearchVO" type="kr.co.irlink.zirecx.record.service.RecordSearchVO"/>
+	<typeAlias  alias="recordEditVO" type="kr.co.irlink.zirecx.record.service.RecordEditVO"/>
+  <typeAlias  alias="recordPenVO" type="kr.co.irlink.zirecx.record.service.RecordPenVO"/>
+	
+	<resultMap id="webPathMap" class="kr.co.irlink.zirecx.record.service.RecordSearchVO">
+		<result property="dbHostName"		column="dbHostName"/>
+		<result property="dbTcpPort"		column="dbTcpPort"/>
+		<result property="audioHostName"	column="audioHostName"/>
+		<result property="audioTcpPort"		column="audioTcpPort"/>
+		<result property="zipStorePath"		column="zipStorePath"/>
+		<result property="zirecxContext"	column="zirecxContext"/>
+		<result property="ziphoneContext"	column="ziphoneContext"/>
+		<result property="zirecxFilePath"	column="zirecxFilePath"/>
+		<result property="ziphoneFilePath"	column="ziphoneFilePath"/>
+	</resultMap>
+  
+  <resultMap id="webPathPenMap" class="kr.co.irlink.zirecx.record.service.RecordPenVO">
+		<result property="dbHostName"		column="dbHostName"/>
+		<result property="dbTcpPort"		column="dbTcpPort"/>
+		<result property="audioHostName"	column="audioHostName"/>
+		<result property="audioTcpPort"		column="audioTcpPort"/>
+		<result property="zipStorePath"		column="zipStorePath"/>
+		<result property="zirecxContext"	column="zirecxContext"/>
+		<result property="ziphoneContext"	column="ziphoneContext"/>
+		<result property="zirecxFilePath"	column="zirecxFilePath"/>
+		<result property="ziphoneFilePath"	column="ziphoneFilePath"/>
+  </resultMap>
+	
+	<resultMap id="fileName" class="kr.co.irlink.zirecx.record.service.RecordSearchVO">
+		<result property="fileName"		column="fileName"/>
+	</resultMap>
+	
+	<resultMap id="linkCallFileName" class="kr.co.irlink.zirecx.record.service.RecordSearchVO">
+		<result property="fileName"							column="fileName"/>
+		<result property="recordFilenameRemoteMemory"		column="record_filename_remote_memory"/>
+		<result property="id"								column="id"/>
+	</resultMap>
+	
+	<resultMap id="recordListMap" class="kr.co.irlink.zirecx.record.service.RecordSearchVO">
+		<result property="rownum"			column="rownum"/>
+		<result property="id"				column="id"/>
+		<result property="firstname"		column="firstname"/>
+		<result property="zirecxId"			column="zirecxId"/>
+		<result property="schGroupName"		column="group_name"/>
+		<result property="phonenumber"		column="phonenumber"/>
+		<result property="remoteparty"		column="remoteparty"/>
+		<result property="ordertime"		column="ordertime"/>
+		<result property="date"				column="date"/>
+		<result property="time"				column="time"/>
+		<result property="duration"			column="duration"/>
+		<result property="io"				column="io"/>
+		<result property="fileName"			column="fileName"/>
+		<result property="segId"			column="seg_id"/>
+		<result property="goodId"			column="good_id"/>
+	</resultMap>
+	
+	<resultMap id="linkCallListMap" class="kr.co.irlink.zirecx.record.service.RecordSearchVO">
+		<result property="rownum"					column="rownum"/>
+		<result property="id"					column="id"/>
+		<result property="firstname"			column="firstname"/>
+		<result property="zirecxId"				column="zirecxId"/>
+		<result property="schGroupName"			column="group_name"/>
+		<result property="phonenumber"			column="phonenumber"/>
+		<result property="campaignName"			column="campaign_name"/>
+		<result property="customerName"			column="customer_name"/>
+		<result property="socialId"				column="socialId"/>
+		<result property="inoutboundCode"		column="inoutbound_code"/>
+		<result property="phoneNumber"			column="phone_number"/>
+		<result property="callStartDate"		column="callStartDate"/>
+		<result property="callStartTime"		column="call_start_time"/>
+		<result property="durationCall"			column="duration_call"/>
+		<result property="callOutcomeMaster"	column="call_outcome_master"/>
+		<result property="callMemo"				column="call_memo"/>
+		<result property="recordFilenameRemoteMemory"	column="record_filename_remote_memory"/>
+		<result property="recordPathRemoteMemory"		column="record_path_remote_memory"/>
+		<result property="customerUniqueCode"			column="customer_unique_code"/>
+		<result property="pk"					column="pk"/>
+		<result property="sipCallId"			column="sip_call_id"/>
+		<result property="callEndTime"			column="call_end_time"/>
+		<result property="durationTalk"			column="duration_talk"/>
+		<result property="cardNo"				column="card_no"/>
+		<result property="cardExpireDate"				column="card_expire_date"/>
+		<result property="userPhoneNumber"				column="user_phone_number"/>
+		<result property="userPhoneNumberGubun"			column="user_phone_number_gubun"/>
+	</resultMap>
+  
+  <resultMap id="linkPenCallListMap" class="kr.co.irlink.zirecx.record.service.RecordPenVO">
+    <result property="rownum"         column="rownum"/>
+    <result property="id"         column="id"/>
+    <result property="firstname"      column="firstname"/>
+    <result property="zirecxId"       column="zirecxId"/>
+    <result property="schGroupName"     column="group_name"/>
+    <result property="phoneNumber"      column="phone_number"/>
+    <!-- <result property="campaignName"     column="campaign_name"/> -->
+    <result property="customerName"     column="customer_name"/>
+    <result property="faceToFace"     column="facetoface"/>
+    <result property="visitPlace"     column="visit_place"/>
+    <result property="visitDate"     column="visit_date"/>
+    <result property="visitDateClass"     column="visit_date_class"/>
+    <result property="playTime"     column="play_time"/>
+    <result property="uploadDate"     column="upload_date"/>
+    <result property="recordFilePath"     column="recordFilePath"/>
+    <result property="recordFileName"     column="recordFileName"/>
+    <result property="pk"         column="pk"/>
+    <result property="recordModeCode"         column="record_mode_code"/>
+  </resultMap>
+	
+	<select id="recordManageDAO.selectRecordList" parameterClass="recordSearchVO" resultMap="recordListMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER ($orderString$)  AS rownum, * FROM (
+				SELECT
+					usr.id, usr.firstname, login.zirecxId, dbo.usp_get_group_path(gtu.groupId) as group_name , usr.phonenumber
+					, seg.remoteparty, seg.timestamp as ordertime
+        			, date_format(seg.timestamp, '%Y-%m-%d') as date, date_format(seg.timestamp, '%H:%i:%s') as time 
+        			, seg.duration, case when seg.direction = 1 then 'O' else 'I' end as io 
+        			, tape.fileName, seg.id as seg_id, gc.id as good_id
+        		FROM orkloginstring login, orkgrouptouser gtu, orkgroup grp, orksegment seg
+        		LEFT OUTER JOIN orkuser usr ON 	seg.user_id = usr.id
+				LEFT OUTER JOIN orktape tape ON seg.tape_id = tape.id
+				LEFT OUTER JOIN orkgoodcall gc  ON seg.id = gc.idSegment and gc.callCode = 'Z'
+				WHERE login.user_id = usr.id
+				AND seg.user_id = gtu.userId
+				AND grp.id = gtu.groupId
+				AND grp.securityGroup = 0
+				<![CDATA[
+					AND date_format(seg.timestamp, '%Y-%m-%d') >= #strStartDate#
+					AND date_format(seg.timestamp, '%Y-%m-%d') <= #strEndDate#
+				]]>
+				
+				<!-- 권한관련 시작 -->
+				<isNotEqual property="strSessionLoginString" compareValue="admin">
+					<isEqual property="strAccessPolicy" compareValue="group">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					 		#arrGroupSeq[]# 
+						</iterate>
+					</isEqual>
+					<isNotEqual property="strAccessPolicy" compareValue="group">
+						<isNotEqual property="strAccessPolicy" compareValue="all">
+							AND login.zirecxId = #zirecxId#<!--AND login.zirecxId = #zirecxId#-->
+						</isNotEqual>
+					</isNotEqual>
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isNotEqual>
+				
+				<isEqual property="strSessionLoginString" compareValue="admin">
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isEqual>
+				<!-- 권한관련 끝 -->
+				
+				<isNotEmpty property="schUserZirecxId">
+					AND login.zirecxId = #schUserZirecxId#
+				</isNotEmpty>
+				
+				<isNotEmpty property="searchKeyword">
+					<isEqual property="searchCondition" compareValue="CUST_PHONE_NO">
+						AND seg.remoteparty = #searchKeyword#
+				  	</isEqual>
+				</isNotEmpty>
+			) r1
+		) t1
+		WHERE t1.rownum BETWEEN #firstIndex# AND #lastIndex#
+	</select>
+	
+	<select id="recordManageDAO.selectRecordListTotCnt" parameterClass="recordSearchVO" resultClass="int">
+		SELECT count(*) totCnt
+        FROM   orkloginstring login
+        , orkgrouptouser gtu
+        , orkgroup grp
+        , orksegment seg
+        LEFT OUTER JOIN orkuser usr ON 	seg.user_id = usr.id
+        LEFT OUTER JOIN orktape tape ON seg.tape_id = tape.id
+        LEFT OUTER JOIN orkgoodcall gc  ON seg.id = gc.idSegment and gc.callCode = 'Z'
+        WHERE login.user_id = usr.id
+        AND seg.user_id = gtu.userId
+        AND grp.id = gtu.groupId
+        AND grp.securityGroup = 0	
+         <![CDATA[
+  			  AND date_format(seg.timestamp, '%Y-%m-%d') >= #strStartDate#
+  			  AND date_format(seg.timestamp, '%Y-%m-%d') <= #strEndDate#
+		]]>
+		
+		<!-- 권한관련 시작 -->
+		<isNotEqual property="strSessionLoginString" compareValue="admin">
+			<isEqual property="strAccessPolicy" compareValue="group">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			 		#arrGroupSeq[]# 
+				</iterate>
+			</isEqual>
+			<isNotEqual property="strAccessPolicy" compareValue="group">
+				<isNotEqual property="strAccessPolicy" compareValue="all">
+					AND login.zirecxId = #zirecxId#<!--AND login.zirecxId = #zirecxId#-->
+				</isNotEqual>
+			</isNotEqual>
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isNotEqual>
+		
+		<isEqual property="strSessionLoginString" compareValue="admin">
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isEqual>
+		<!-- 권한관련 끝 -->
+		
+		<isNotEmpty property="schUserZirecxId">
+			AND login.zirecxId = #schUserZirecxId#
+		</isNotEmpty>
+		<isNotEmpty property="searchKeyword">
+			<isEqual property="searchCondition" compareValue="CUST_PHONE_NO">
+		  		AND seg.remoteparty = #searchKeyword#
+			</isEqual>
+		</isNotEmpty>
+	</select>
+	
+	<select id="recordManageDAO.selectLinkCallList" parameterClass="recordSearchVO" resultMap="linkCallListMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER ($orderString$)  AS rownum, * FROM (
+				SELECT
+					usr.id, usr.firstname, login.zirecxId, 
+					c.group_name AS group_name,
+					<!-- dbo.usp_get_group_path(gtu.groupId) AS group_name, --> 
+					usr.phonenumber,
+					c.campaign_name, c.customer_name, 
+					CASE WHEN LEN(c.social_Id) > 7 THEN (LEFT(c.social_id, 7) + '******') ELSE c.social_Id END AS socialId,
+					c.inoutbound_code, c.phone_number,
+					LEFT(c.call_start_date, 4) + '-' + SUBSTRING(c.call_start_date, 5, 2) + '-' + RIGHT(c.call_start_date, 2) AS callStartDate,
+					c.call_start_time, c.duration_call,
+					c.call_outcome_master, c.call_memo, c.record_filename_remote_memory, c.record_path_remote_memory, c.customer_unique_code, 
+					c.id AS pk, c.sip_call_id, c.call_end_time, c.duration_talk, c.card_no, 
+					c.card_expire_date, c.user_phone_number, c.user_phone_number_gubun
+				FROM orkcall (NOLOCK) c
+					LEFT OUTER JOIN orkloginstring (NOLOCK) login ON login.zirecxId = c.zirecxId
+					LEFT OUTER JOIN orkuser (NOLOCK) usr ON login.user_id = usr.id
+					, orkgrouptouser (NOLOCK) gtu, orkgroup (NOLOCK) grp
+				WHERE gtu.userId = usr.id 
+				AND grp.id = gtu.groupId 
+				AND grp.securitygroup = 0 
+				AND c.call_start_date BETWEEN #strStartDate# AND #strEndDate#
+				
+				<!-- 권한관련 시작 -->
+				<isNotEqual property="strSessionLoginString" compareValue="admin">
+					<isEqual property="strAccessPolicy" compareValue="group">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+						</iterate>
+					</isEqual>
+					<isNotEqual property="strAccessPolicy" compareValue="group">
+						<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+							<isNotEqual property="strAccessPolicy" compareValue="all">
+								AND login.zirecxId = #zirecxId#
+							</isNotEqual>
+						</isNotEqual>
+						
+						<!-- 2.0 추가  -->
+						<isEqual property="strAccessPolicy" compareValue="groupUp">
+							AND grp.id IN 
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+							</iterate>
+						</isEqual>
+						<!--  끝  -->
+					</isNotEqual>
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isNotEqual>
+				
+				<isEqual property="strSessionLoginString" compareValue="admin">
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isEqual>
+				<!-- 권한관련 끝 -->
+				
+				<isNotEmpty property="schUserZirecxId">
+					AND login.zirecxId = #schUserZirecxId#
+				</isNotEmpty>
+				
+				<isNotEmpty property="strStartTime">
+					AND c.call_start_time BETWEEN #strStartTime# AND #strEndTime#
+				</isNotEmpty>
+				<isNotEmpty property="searchKeyword">
+					<isEqual property="searchCondition" compareValue="CUST_PHONE_NO">
+						AND c.phone_number like ('%' + #searchKeyword# + '%' )
+				  	</isEqual>
+				  	<isEqual property="searchCondition" compareValue="CUSTOMER_NAME">
+						AND c.customer_name = #searchKeyword#
+				  	</isEqual>
+				  	<isEqual property="searchCondition" compareValue="USER_PHONE_NO">
+						AND c.user_phone_number like ('%' + #searchKeyword# + '%' )
+				  	</isEqual>
+				  	<isEqual property="searchCondition" compareValue="SOCIAL_ID">
+						AND c.social_id = #searchKeyword#
+				  	</isEqual>
+				</isNotEmpty>
+				
+				<isNotEmpty property="callresult">
+						AND c.call_outcome_code_master = #callresult#
+				</isNotEmpty>
+				
+				<isNotEmpty property="campaign">
+						AND c.campaign_name = #campaign#
+				</isNotEmpty>
+				
+				<isEqual property="searchConnectYn" compareValue="Y">
+			  		<![CDATA[
+			  			AND c.duration_talk <> 0
+			  		]]>
+			  	</isEqual>
+			  	<isEqual property="searchConnectYn" compareValue="N">
+			  		AND c.duration_talk = 0
+			  	</isEqual>
+			) r1
+		) t1
+		WHERE t1.rownum BETWEEN #firstIndex# AND #lastIndex#
+	</select>
+	
+	<select id="recordManageDAO.selectLinkCallListTotCnt" parameterClass="recordSearchVO" resultClass="int">
+    	SELECT
+    		COUNT(*) as totCnt
+		FROM orkcall (NOLOCK) c
+			LEFT OUTER JOIN orkloginstring (NOLOCK) login ON login.zirecxId = c.zirecxId
+			LEFT OUTER JOIN orkuser (NOLOCK) usr ON login.user_id = usr.id
+			, orkgrouptouser (NOLOCK) gtu, orkgroup (NOLOCK) grp
+		WHERE gtu.userId = usr.id 
+		AND grp.id = gtu.groupId 
+		AND grp.securitygroup = 0 
+		AND c.call_start_date BETWEEN #strStartDate# AND #strEndDate#
+		<!-- 권한관련 시작 -->
+		<isNotEqual property="strSessionLoginString" compareValue="admin">
+			<isEqual property="strAccessPolicy" compareValue="group">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					#arrGroupSeq[]# 
+				</iterate>
+			</isEqual>
+			<isNotEqual property="strAccessPolicy" compareValue="group">
+				<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+					<isNotEqual property="strAccessPolicy" compareValue="all">
+						AND login.zirecxId = #zirecxId#
+					</isNotEqual>
+				</isNotEqual>
+				<!-- 2.0 추가 -->
+				<isEqual property="strAccessPolicy" compareValue="groupUp">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+					</iterate>
+				</isEqual>
+				<!--  끝  -->
+			</isNotEqual>
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isNotEqual>
+		
+		<isEqual property="strSessionLoginString" compareValue="admin">
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isEqual>
+		<!-- 권한관련 끝 -->
+		
+		<isNotEmpty property="schUserZirecxId">
+			AND login.zirecxId = #schUserZirecxId#
+		</isNotEmpty>
+		
+		<isNotEmpty property="strStartTime">
+			AND c.call_start_time BETWEEN #strStartTime# AND #strEndTime#
+		</isNotEmpty>
+		<isNotEmpty property="searchKeyword">
+			<isEqual property="searchCondition" compareValue="CUST_PHONE_NO">
+				AND c.phone_number like ('%' + #searchKeyword# + '%' )
+		  	</isEqual>
+		  	<isEqual property="searchCondition" compareValue="CUSTOMER_NAME">
+				AND c.customer_name = #searchKeyword#
+		  	</isEqual>
+		  	<isEqual property="searchCondition" compareValue="USER_PHONE_NO">
+				AND c.user_phone_number like ('%' + #searchKeyword# + '%' )
+		  	</isEqual>
+		  	<isEqual property="searchCondition" compareValue="SOCIAL_ID">
+				AND c.social_id = #searchKeyword#
+		  	</isEqual>
+		</isNotEmpty>
+		
+		<isNotEmpty property="callresult">
+				AND c.call_outcome_code_master = #callresult#
+		</isNotEmpty>
+		
+		<isNotEmpty property="campaign">
+				AND c.campaign_name = #campaign#
+		</isNotEmpty>
+		
+		<isEqual property="searchConnectYn" compareValue="Y">
+	  		<![CDATA[
+	  			AND c.duration_talk <> 0
+	  		]]>
+	  	</isEqual>
+	  	<isEqual property="searchConnectYn" compareValue="N">
+	  		AND c.duration_talk = 0
+	  	</isEqual>
+	</select>
+  
+  <!--  -->
+  <select id="recordManageDAO.selectLinkPenCallList" parameterClass="recordPenVO" resultMap="linkPenCallListMap">
+    SELECT * FROM (
+      SELECT ROW_NUMBER() OVER ($orderString$)  AS rownum, * FROM (
+        SELECT
+          usr.id, usr.firstname, login.zirecxId, dbo.usp_get_group_path(gtu.groupId) AS group_name, usr.phonenumber,
+          c.customer_name, c.phone_number, c.facetoface, c.visit_place, c.visit_date, c.visit_date_class, c.play_time, c.upload_date,
+          c.recordFilePath, c.recordFileName, c.id AS pk, c.record_mode_code
+        FROM orkpen (NOLOCK) c
+          LEFT OUTER JOIN orkloginstring (NOLOCK) login ON login.zirecxId = c.zirecxId
+          LEFT OUTER JOIN orkuser (NOLOCK) usr ON login.user_id = usr.id
+          , orkgrouptouser (NOLOCK) gtu, orkgroup (NOLOCK) grp
+        WHERE gtu.userId = usr.id 
+        AND grp.id = gtu.groupId 
+        AND grp.securitygroup = 0 
+        AND c.visit_date BETWEEN #strStartDate# AND #strEndDate#
+        
+        <!-- 권한관련 시작 -->
+        <isNotEqual property="strSessionLoginString" compareValue="admin">
+          <isEqual property="strAccessPolicy" compareValue="group">
+            AND grp.id IN 
+            <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+              #arrGroupSeq[]# 
+            </iterate>
+          </isEqual>
+          
+          <isNotEqual property="strAccessPolicy" compareValue="group">
+			<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+				<isNotEqual property="strAccessPolicy" compareValue="all">
+					AND login.zirecxId = #zirecxId#
+				</isNotEqual>
+			</isNotEqual>
+			
+			<!-- 2.0 추가  -->
+			<isEqual property="strAccessPolicy" compareValue="groupUp">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					#arrGroupSeq[]# 
+				</iterate>
+			</isEqual>
+			<!--  끝  -->
+		  </isNotEqual>
+			
+		  <isNotEmpty property="schGroupId">
+	        AND grp.id IN 
+	        <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+	            #arrGroupSeq[]# 
+	        </iterate>
+	      </isNotEmpty>
+		</isNotEqual>
+ 
+        
+        <isEqual property="strSessionLoginString" compareValue="admin">
+          <isNotEmpty property="schGroupId">
+            AND grp.id IN 
+            <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+                #arrGroupSeq[]# 
+            </iterate>
+          </isNotEmpty>
+        </isEqual>
+        <!-- 권한관련 끝 -->
+        
+        <isNotEmpty property="schUserZirecxId">
+          AND login.zirecxId = #schUserZirecxId#
+        </isNotEmpty>
+        
+        <isNotEmpty property="phoneNumber">
+          AND c.phone_number like ('%' + #phoneNumber# + '%')
+        </isNotEmpty>
+        
+        <isNotEmpty property="customerName">
+          AND c.customer_name = #customerName#
+        </isNotEmpty>
+        
+        <isNotEqual property="visitPlace" compareValue="전체">
+          AND c.visit_place = #visitPlace#
+        </isNotEqual>
+        
+        <isNotEqual property="faceToFace" compareValue="전체">
+          AND c.facetoface = #faceToFace#
+        </isNotEqual>
+        
+        <isNotEqual property="endPlayTime" compareValue="0">
+          AND c.play_time BETWEEN $startPlayTime$ AND $endPlayTime$
+        </isNotEqual>
+      ) r1
+    ) t1
+    WHERE t1.rownum BETWEEN #firstIndex# AND #lastIndex#
+  </select>
+  
+  <select id="recordManageDAO.selectLinkPenCallListTotCnt" parameterClass="recordPenVO" resultClass="int">
+      SELECT
+        COUNT(*) as totCnt
+    FROM orkpen (NOLOCK) c
+      LEFT OUTER JOIN orkloginstring (NOLOCK) login ON login.zirecxId = c.zirecxId
+      LEFT OUTER JOIN orkuser (NOLOCK) usr ON login.user_id = usr.id
+      , orkgrouptouser (NOLOCK) gtu, orkgroup (NOLOCK) grp
+    WHERE gtu.userId = usr.id 
+    AND grp.id = gtu.groupId 
+    AND grp.securitygroup = 0 
+    AND c.visit_date BETWEEN #strStartDate# AND #strEndDate#
+    <!-- 권한관련 시작 -->
+    <isNotEqual property="strSessionLoginString" compareValue="admin">
+      <isEqual property="strAccessPolicy" compareValue="group">
+        AND grp.id IN 
+        <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+          #arrGroupSeq[]# 
+        </iterate>
+      </isEqual>
+
+      <isNotEqual property="strAccessPolicy" compareValue="group">
+			<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+				<isNotEqual property="strAccessPolicy" compareValue="all">
+					AND login.zirecxId = #zirecxId#
+				</isNotEqual>
+			</isNotEqual>
+			
+			<!-- 2.0 추가  -->
+			<isEqual property="strAccessPolicy" compareValue="groupUp">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					#arrGroupSeq[]# 
+				</iterate>
+			</isEqual>
+			<!--  끝  -->
+		</isNotEqual>
+      <isNotEmpty property="schGroupId">
+        AND grp.id IN 
+        <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+            #arrGroupSeq[]# 
+        </iterate>
+      </isNotEmpty>
+    </isNotEqual>
+    
+    <isEqual property="strSessionLoginString" compareValue="admin">
+      <isNotEmpty property="schGroupId">
+        AND grp.id IN 
+        <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+            #arrGroupSeq[]# 
+        </iterate>
+      </isNotEmpty>
+    </isEqual>
+    <!-- 권한관련 끝 -->
+    
+    <isNotEmpty property="schUserZirecxId">
+      AND login.zirecxId = #schUserZirecxId#
+    </isNotEmpty>
+    
+    <isNotEmpty property="phoneNumber">
+      AND c.phone_number like ('%' + #phoneNumber# + '%')
+    </isNotEmpty>
+    
+    <isNotEmpty property="customerName">
+      AND c.customer_name = #customerName#
+    </isNotEmpty>
+    
+    <isNotEqual property="visitPlace" compareValue="전체">
+          AND c.visit_place = #visitPlace#
+     </isNotEqual>
+    
+     <isNotEqual property="faceToFace" compareValue="전체">
+          AND c.facetoface = #faceToFace#
+     </isNotEqual>
+    
+    <isNotEqual property="endPlayTime" compareValue="0">
+          AND c.play_time BETWEEN $startPlayTime$ AND $endPlayTime$
+    </isNotEqual>
+  </select>
+	
+	
+	<select id="recordManageDAO.selectCallresult" parameterClass="recordSearchVO" resultClass="egovMap">
+		SELECT codeValue, codeName
+		FROM orkcode
+		WHERE codeMaster = 10016
+		ORDER BY sortOrder ASC
+	</select>
+  
+	<select id="recordManageDAO.selectPenCallresult" parameterClass="recordPenVO" resultClass="egovMap">
+		SELECT codeValue, codeName
+		FROM orkcode
+		WHERE codeMaster = 10016
+		ORDER BY sortOrder ASC
+	</select>
+	
+	<select id="recordManageDAO.selectCheckRecordExcelList" parameterClass="recordSearchVO" resultClass="egovMap">
+	SELECT usr.id, usr.firstname, login.zirecxId, dbo.usp_get_group_path(gtu.groupId) as group_name , usr.phonenumber
+        , seg.remoteparty
+        , date_format(seg.timestamp, '%Y-%m-%d') as date, date_format(seg.timestamp, '%H:%i:%s') as time 
+        , seg.duration, case when seg.direction = 1 then '발신' else '수신' end as io 
+        , tape.fileName, seg.id as seg_id, gc.id as good_id
+        FROM   orkloginstring login
+        , orkgrouptouser gtu
+        , orkgroup grp
+        , orksegment seg
+        LEFT OUTER JOIN orkuser usr ON 	seg.user_id = usr.id
+        LEFT OUTER JOIN orktape tape ON seg.tape_id = tape.id
+        LEFT OUTER JOIN orkgoodcall gc  ON seg.id = gc.idSegment and gc.callCode = 'Z'
+        WHERE login.user_id = usr.id
+        AND seg.user_id = gtu.userId
+        AND grp.id = gtu.groupId
+        AND grp.securityGroup = 0
+        <![CDATA[
+  			  AND date_format(seg.timestamp, '%Y-%m-%d') >= #strStartDate#
+  			  AND date_format(seg.timestamp, '%Y-%m-%d') <= #strEndDate#
+		]]>
+		
+		<!-- 권한관련 시작 -->
+		<isNotEqual property="strSessionLoginString" compareValue="admin">
+			<isEqual property="strAccessPolicy" compareValue="group">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			 		#arrGroupSeq[]# 
+				</iterate>
+			</isEqual>
+			<isNotEqual property="strAccessPolicy" compareValue="group">
+				<isNotEqual property="strAccessPolicy" compareValue="all">
+					AND login.zirecxId = #zirecxId#
+				</isNotEqual>
+			</isNotEqual>
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isNotEqual>
+		
+		<isEqual property="strSessionLoginString" compareValue="admin">
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isEqual>
+		<!-- 권한관련 끝 -->
+	
+		<isNotEmpty property="schUserZirecxId">
+			AND login.zirecxId = #schUserZirecxId#
+		</isNotEmpty>
+		<isNotEmpty property="searchKeyword">
+			<isEqual property="searchCondition" compareValue="CUST_PHONE_NO">
+				AND seg.remoteparty = #searchKeyword#
+			</isEqual>
+		</isNotEmpty> 
+		 
+		AND seg.id IN 
+		<iterate property="arrSelectedRecId" open="(" close=")" conjunction="," >
+			#arrSelectedRecId[]# 
+	    </iterate>
+	</select>
+	
+	<select id="recordManageDAO.selectCheckLinkCallExcelList" parameterClass="recordSearchVO" resultClass="egovMap">
+		SELECT
+			usr.id, usr.firstname, login.zirecxId, dbo.usp_get_group_path(gtu.groupId) AS group_name, usr.phonenumber,
+			c.campaign_name, c.customer_name, 
+			CASE WHEN LEN(c.social_Id) > 7 THEN (LEFT(c.social_id, 7) + '******') ELSE c.social_Id END AS socialId,
+			c.inoutbound_code, c.phone_number, 
+			<!-- CONVERT(DATE, c.call_start_date, 120) AS callStartDate, --> 
+			c.call_start_date,
+			c.call_start_time, c.duration_call,
+			c.call_outcome_master, c.call_memo, c.record_filename_remote_memory, c.record_path_remote_memory, c.customer_unique_code, 
+			c.id AS pk, c.sip_call_id, c.call_end_time, c.duration_talk, c.card_no, 
+			c.card_expire_date
+			
+		FROM orkcall (NOLOCK) c
+		LEFT OUTER JOIN orkloginstring (NOLOCK) login ON login.zirecxId = c.zirecxId
+		LEFT OUTER JOIN orkuser (NOLOCK) usr ON login.user_id = usr.id
+			, orkgrouptouser (NOLOCK) gtu, orkgroup (NOLOCK) grp
+		WHERE gtu.userId = usr.id
+		AND grp.id = gtu.groupId 
+		AND grp.securitygroup = 0 
+		AND c.call_start_date BETWEEN #strStartDate# AND #strEndDate#
+		
+		<!-- 권한관련 시작 -->
+		<isNotEqual property="strSessionLoginString" compareValue="admin">
+			<isEqual property="strAccessPolicy" compareValue="group">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			 		#arrGroupSeq[]# 
+				</iterate>
+			</isEqual>
+			<isNotEqual property="strAccessPolicy" compareValue="group">
+				<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+					<isNotEqual property="strAccessPolicy" compareValue="all">
+						AND login.zirecxId = #zirecxId#
+					</isNotEqual>
+				</isNotEqual>
+				
+				<!-- 2.0 추가  -->
+				<isEqual property="strAccessPolicy" compareValue="groupUp">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+					</iterate>
+				</isEqual>
+				<!--  끝  -->
+			</isNotEqual>
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isNotEqual>
+		
+		<isEqual property="strSessionLoginString" compareValue="admin">
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isEqual>
+		<!-- 권한관련 끝 -->
+		
+		<isNotEmpty property="schUserZirecxId">
+			AND login.zirecxId = #schUserZirecxId#
+		</isNotEmpty>
+		
+		<isNotEmpty property="strStartTime">
+			AND c.call_start_time BETWEEN #strStartTime# AND #strEndTime#
+		</isNotEmpty>
+		<isNotEmpty property="searchKeyword">
+			<isEqual property="searchCondition" compareValue="CUST_PHONE_NO">
+				AND c.phone_number = #searchKeyword#
+		  	</isEqual>
+		  	<isEqual property="searchCondition" compareValue="CUSTOMER_NAME">
+				AND c.customer_name = #searchKeyword#
+		  	</isEqual>
+		  	<isEqual property="searchCondition" compareValue="USER_PHONE_NO">
+				AND c.user_phone_number = #searchKeyword#
+		  	</isEqual>
+		  	<isEqual property="searchCondition" compareValue="SOCIAL_ID">
+				AND c.social_id = #searchKeyword#
+		  	</isEqual>
+		</isNotEmpty>
+		
+		<isNotEmpty property="callresult">
+				AND c.call_outcome_code_master = #callresult#
+		</isNotEmpty>
+		
+		<isNotEmpty property="campaign">
+				AND c.campaign_name = #campaign#
+		</isNotEmpty>
+		
+		<isEqual property="searchConnectYn" compareValue="Y">
+	  		<![CDATA[
+	  			AND c.duration_talk <> 0
+	  		]]>
+	  	</isEqual>
+	  	<isEqual property="searchConnectYn" compareValue="N">
+	  		AND c.duration_talk = 0
+	  	</isEqual>
+		
+		AND c.id IN 
+		<iterate property="arrSelectedRecId" open="(" close=")" conjunction="," >
+			#arrSelectedRecId[]# 
+	    </iterate>
+	    
+	    <isEmpty  property="orderField">
+			ORDER BY c.call_start_date DESC, c.call_start_time DESC
+		</isEmpty>
+		
+		<isEqual property="orderField" compareValue="campaignName">
+			<isEqual property="orderType" compareValue="ASC">
+				ORDER BY c.campaign_name ASC
+			</isEqual>
+			<isEqual property="orderType" compareValue="DESC">
+				ORDER BY c.campaign_name DESC
+			</isEqual>
+		</isEqual>
+		
+		<isEqual property="orderField" compareValue="callStartTime">
+			<isEqual property="orderType" compareValue="ASC">
+				order by callStartDate ASC, call_start_time ASC
+			</isEqual>
+			<isEqual property="orderType" compareValue="DESC">
+				order by callStartDate DESC, call_start_time DESC
+			</isEqual>
+		</isEqual>
+		
+		<isEqual property="orderField" compareValue="callEndTime">
+			<isEqual property="orderType" compareValue="ASC">
+				order by callStartDate ASC, call_end_time ASC
+			</isEqual>
+			<isEqual property="orderType" compareValue="DESC">
+				order by callStartDate DESC, call_end_time DESC
+			</isEqual>
+		</isEqual>
+		
+		<isEqual property="orderField" compareValue="durationCall">
+			<isEqual property="orderType" compareValue="ASC">
+				ORDER BY duration_call ASC
+			</isEqual>
+			<isEqual property="orderType" compareValue="DESC">
+				ORDER BY duration_call DESC
+			</isEqual>
+		</isEqual>
+		
+		<isEqual property="orderField" compareValue="durationTalk">
+			<isEqual property="orderType" compareValue="ASC">
+				ORDER BY duration_talk ASC
+			</isEqual>
+			<isEqual property="orderType" compareValue="DESC">
+				ORDER BY duration_talk DESC
+			</isEqual>
+		</isEqual>
+	</select>
+	
+	
+	<!-- 2.0 펜녹취 엑셀 추가  -->
+	<select id="recordManageDAO.selectCheckPenCallExcelList" parameterClass="recordPenVO" resultClass="egovMap">
+		SELECT * FROM (
+	      SELECT ROW_NUMBER() OVER ($orderString$)  AS rownum, * FROM (
+	        SELECT
+	          usr.id, usr.firstname, login.zirecxId, dbo.usp_get_group_path(gtu.groupId) AS group_name, usr.phonenumber,
+	          c.customer_name, c.phone_number, c.facetoface, c.visit_place, c.visit_date, c.visit_date_class, c.play_time, c.upload_date,
+	          c.recordFilePath, c.recordFileName, c.id AS pk, c.record_mode_code
+	        FROM orkpen (NOLOCK) c
+	          LEFT OUTER JOIN orkloginstring (NOLOCK) login ON login.zirecxId = c.zirecxId
+	          LEFT OUTER JOIN orkuser (NOLOCK) usr ON login.user_id = usr.id
+	          , orkgrouptouser (NOLOCK) gtu, orkgroup (NOLOCK) grp
+	        WHERE gtu.userId = usr.id 
+	        AND grp.id = gtu.groupId 
+	        AND grp.securitygroup = 0 
+	        AND c.visit_date BETWEEN #strStartDate# AND #strEndDate#
+	        
+	        <!-- 권한관련 시작 -->
+	        <isNotEqual property="strSessionLoginString" compareValue="admin">
+	          <isEqual property="strAccessPolicy" compareValue="group">
+	            AND grp.id IN 
+	            <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+	              #arrGroupSeq[]# 
+	            </iterate>
+	          </isEqual>
+	          
+	          <isNotEqual property="strAccessPolicy" compareValue="group">
+				<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+					<isNotEqual property="strAccessPolicy" compareValue="all">
+						AND login.zirecxId = #zirecxId#
+					</isNotEqual>
+				</isNotEqual>
+				
+				<!-- 김해동 추가  -->
+				<isEqual property="strAccessPolicy" compareValue="groupUp">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+					</iterate>
+				</isEqual>
+				<!--  끝  -->
+			  </isNotEqual>
+				
+			  <isNotEmpty property="schGroupId">
+		        AND grp.id IN 
+		        <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+		            #arrGroupSeq[]# 
+		        </iterate>
+		      </isNotEmpty>
+			</isNotEqual>
+	 
+	        
+	        <isEqual property="strSessionLoginString" compareValue="admin">
+	          <isNotEmpty property="schGroupId">
+	            AND grp.id IN 
+	            <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+	                #arrGroupSeq[]# 
+	            </iterate>
+	          </isNotEmpty>
+	        </isEqual>
+	        <!-- 권한관련 끝 -->
+	        
+	        <isNotEmpty property="schUserZirecxId">
+	          AND login.zirecxId = #schUserZirecxId#
+	        </isNotEmpty>
+	        
+	        <isNotEmpty property="phoneNumber">
+	          AND c.phone_number like ('%' + #phoneNumber# + '%')
+	        </isNotEmpty>
+	        
+	        <isNotEmpty property="customerName">
+	          AND c.customer_name = #customerName#
+	        </isNotEmpty>
+	        
+	        <isNotEqual property="visitPlace" compareValue="전체">
+	          AND c.visit_place = #visitPlace#
+	        </isNotEqual>
+	        
+	        <isNotEqual property="faceToFace" compareValue="전체">
+	          AND c.facetoface = #faceToFace#
+	        </isNotEqual>
+	        
+	        <isNotEqual property="endPlayTime" compareValue="0">
+	          AND c.play_time BETWEEN $startPlayTime$ AND $endPlayTime$
+	        </isNotEqual>
+	        
+	        <!-- 김해동 추가  -->
+		        AND c.id IN 
+			<iterate property="arrSelectedRecId" open="(" close=")" conjunction="," >
+				#arrSelectedRecId[]# 
+		    </iterate>
+	      ) r1
+	    ) t1
+	</select>
+	
+	<select id="recordManageDAO.selectCheckGoodCallExcelList" parameterClass="recordSearchVO" resultClass="egovMap">
+	SELECT id, firstname, zirecxId, schGroupName,
+		phonenumber, campaign_name, customer_name, social_id, inoutbound_code,
+		phone_number
+		, call_start_date , call_start_time,
+		duration_call, call_outcome, call_memo, record_filename_remote_memory,  record_path_remote_memory,
+		customer_unique_code, pk, good_id, sip_call_id, description, callCode
+		from
+		(SELECT usr.id, usr.firstname, login.zirecxId, dbo.usp_get_group_path(gtu.groupId) as schGroupName,
+			usr.phonenumber, c.campaign_name, c.customer_name, c.social_id, c.inoutbound_code,
+			c.phone_number
+			, date_format(c.call_start_date, '%Y-%m-%d') as call_start_date , c.call_start_time,
+			c.duration_call, c.call_outcome, c.call_memo, c.record_filename_remote_memory,  c.record_path_remote_memory,
+			c.customer_unique_code, c.id as pk, gc.id good_id, c.sip_call_id, gc.description, gc.callCode
+			FROM   orkuser usr
+			, orkgrouptouser gtu
+			, orkgroup grp
+			, orkgoodcall gc
+			, orkcall c
+			LEFT OUTER JOIN orkloginstring login ON c.zirecxId = login.zirecxId
+			WHERE login.user_id = usr.id
+			AND usr.id = gtu.userId
+			AND grp.id = gtu.groupId
+			AND c.id = gc.idSegment
+			AND grp.securityGroup = 0
+			AND gc.callCode = 'M'
+			<![CDATA[
+  			  AND date_format(c.call_start_date, '%Y-%m-%d') >= #strStartDate#
+  			  AND date_format(c.call_start_date, '%Y-%m-%d') <= #strEndDate#
+			]]>
+			
+			<!-- 권한관련 시작 -->
+			<isNotEqual property="strSessionLoginString" compareValue="admin">
+				<isEqual property="strAccessPolicy" compareValue="group">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				 		#arrGroupSeq[]# 
+					</iterate>
+				</isEqual>
+				<isNotEqual property="strAccessPolicy" compareValue="group">
+					<isNotEqual property="strAccessPolicy" compareValue="all">
+						AND login.zirecxId = #zirecxId#
+					</isNotEqual>
+				</isNotEqual>
+				<isNotEmpty property="schGroupId">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				  		#arrGroupSeq[]# 
+					</iterate>
+				</isNotEmpty>
+			</isNotEqual>
+			
+			<isEqual property="strSessionLoginString" compareValue="admin">
+				<isNotEmpty property="schGroupId">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				  		#arrGroupSeq[]# 
+					</iterate>
+				</isNotEmpty>
+			</isEqual>
+			<!-- 권한관련 끝 -->
+			
+			<isNotEmpty property="schUserZirecxId">
+				AND login.zirecxId = #schUserZirecxId#
+			</isNotEmpty>
+			
+			<isNotEmpty property="searchKeyword">
+				<isEqual property="searchCondition" compareValue="CUST_PHONE_NO">
+					AND c.phone_number = #searchKeyword#
+			  	</isEqual>
+			</isNotEmpty>
+			
+		union
+			
+		SELECT usr.id, usr.firstname, login.zirecxId, dbo.usp_get_group_path(gtu.groupId) as group_name, usr.phonenumber
+			, null campaign_name, null customer_name, null social_id, case when seg.direction = 1 then '발신' else '수신' end as io, seg.remoteparty
+			, date_format(seg.timestamp, '%Y-%m-%d') as date, date_format(seg.timestamp, '%H:%i:%s') as time
+			, seg.duration, null call_outcome, null call_memo
+			, tape.fileName, null record_path_remote_memory, null customer_unique_code, seg.id as seg_id, gc.id as good_id
+	    	, null sip_call_id, gc.description, gc.callCode
+			FROM   orkloginstring login
+			, orkgrouptouser gtu
+			, orkgroup grp
+			, orkgoodcall gc
+			, orksegment seg
+			LEFT OUTER JOIN orkuser usr ON 	seg.user_id = usr.id
+			LEFT OUTER JOIN orktape tape ON seg.tape_id = tape.id
+			WHERE login.user_id = usr.id
+			AND seg.user_id = gtu.userId
+			AND grp.id = gtu.groupId
+			AND seg.id = gc.idSegment
+			AND grp.securityGroup = 0
+			AND gc.callCode = 'Z'
+			<![CDATA[
+  			  AND date_format(seg.timestamp, '%Y-%m-%d') >= #strStartDate#
+  			  AND date_format(seg.timestamp, '%Y-%m-%d') <= #strEndDate#
+			]]>
+			
+			<!-- 권한관련 시작 -->
+			<isNotEqual property="strSessionLoginString" compareValue="admin">
+				<isEqual property="strAccessPolicy" compareValue="group">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				 		#arrGroupSeq[]# 
+					</iterate>
+				</isEqual>
+				<isNotEqual property="strAccessPolicy" compareValue="group">
+					<isNotEqual property="strAccessPolicy" compareValue="all">
+						AND login.zirecxId = #zirecxId#
+					</isNotEqual>
+				</isNotEqual>
+				<isNotEmpty property="schGroupId">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				  		#arrGroupSeq[]# 
+					</iterate>
+				</isNotEmpty>
+			</isNotEqual>
+			
+			<isEqual property="strSessionLoginString" compareValue="admin">
+				<isNotEmpty property="schGroupId">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				  		#arrGroupSeq[]# 
+					</iterate>
+				</isNotEmpty>
+			</isEqual>
+			<!-- 권한관련 끝 -->
+			
+			<isNotEmpty property="schUserZirecxId">
+				AND login.zirecxId = #schUserZirecxId#
+			</isNotEmpty>
+			
+			<isNotEmpty property="searchKeyword">
+				<isEqual property="searchCondition" compareValue="CUST_PHONE_NO">
+					AND seg.remoteparty = #searchKeyword#
+			  	</isEqual>
+			</isNotEmpty>
+	)a
+		WHERE callCode = #downloadcode#
+		AND pk IN 
+		<iterate property="arrSelectedRecId" open="(" close=")" conjunction="," >
+			#arrSelectedRecId[]# 
+	    </iterate>
+		
+	</select>
+	
+	<insert id="recordManageDAO.insertGoodCall" parameterClass="recordSearchVO">
+		<![CDATA[
+			INSERT INTO orkgoodcall
+				(idSegment
+				,callFlag
+				,userId
+				,description
+				,callCode
+				,dateCreated
+				,dateDeleted
+				,dateDisabled
+				,dateUpdated
+				,deleted
+				,disabled
+				)
+			VALUES ( #strRecFileId#
+				  , #strCallFlag#
+				  , #schUserZirecxId#
+				  , #description#
+				  , #strCallCode#
+				  , getdate()
+				  , getdate()
+				  , getdate()
+				  , getdate()
+				  , 0
+				  , 0
+				  )
+		]]>
+	</insert>
+	
+	<delete id="recordManageDAO.removeGoodCall" parameterClass="recordSearchVO">
+		DELETE FROM orkgoodcall
+		WHERE idSegment = #strRecFileId#
+	</delete>
+	
+	<select id="recordManageDAO.fileDownload" parameterClass="recordSearchVO" resultMap="fileName">
+
+		SELECT tape.fileName
+		FROM orksegment seg
+		LEFT OUTER JOIN orktape tape
+		ON seg.tape_id = tape.id
+		WHERE seg.id IN
+		<iterate property="arrSelectedRecId" open="(" close=")" conjunction="," >
+			#arrSelectedRecId[]# 
+	    </iterate>
+	
+	</select>
+	
+	<select id="recordManageDAO.linkCallFileDownload" parameterClass="recordSearchVO" resultMap="linkCallFileName">
+
+		SELECT 
+			(c.record_path_remote_memory + '/' + c.record_filename_remote_memory) as fileName
+			, c.record_filename_remote_memory, c.id
+		FROM orkcall c
+		WHERE c.id IN
+		<iterate property="arrSelectedRecId" open="(" close=")" conjunction="," >
+			#arrSelectedRecId[]# 
+	    </iterate>
+	
+	</select>
+	
+	<select id="recordManageDAO.fileDownloadPen" parameterClass="recordPenVO" resultMap="linkCallFileName">
+		select
+		(p.recordFilePath + '/' + p.recordFileName) as fileName
+		, '' as record_filename_remote_memory, p.id
+		from orkpen p
+		WHERE p.id IN
+		<iterate property="arrSelectedRecId" open="(" close=")" conjunction="," >
+			#arrSelectedRecId[]# 
+	    </iterate>
+	
+	</select>
+	
+	<select id="recordManageDAO.selectWebPath" parameterClass="recordSearchVO" resultMap="webPathMap">
+
+	SELECT  db_host_name.codeName dbHostName, db_tcp_port.codeName dbTcpPort,
+        audio_host_name.codeName audioHostName,
+        audio_tcp_port.codeName audioTcpPort,
+        zip_store_path.codeName zipStorePath,
+        zirecx_context.codeName zirecxContext,
+        ziphone_context.codeName ziphoneContext,
+        zirecx_file_path.codeName zirecxFilePath,
+        ziphone_file_path.codeName ziphoneFilePath
+    FROM
+    ( SELECT codeName FROM orkcode WHERE codeMaster=10001 AND codeValue='db_host_name' AND deleted=0) db_host_name,
+    ( SELECT codeName from orkcode WHERE codeMaster=10001 AND codeValue='audio_host_name' AND deleted=0) audio_host_name,
+    ( SELECT codeName from orkcode WHERE codeMaster=10002 AND codeValue='db_tcp_port' AND deleted=0) db_tcp_port,
+    ( SELECT codeName from orkcode WHERE codeMaster=10002 AND codeValue='audio_tcp_port' AND deleted=0) audio_tcp_port,
+    ( SELECT codeName from orkcode WHERE codeMaster=10003 AND codeValue='zip_store_path' AND deleted=0) zip_store_path,
+    ( SELECT codeName from orkcode WHERE codeMaster=10010 AND codeValue='zirecx' AND deleted=0) zirecx_context,
+    ( SELECT codeName from orkcode WHERE codeMaster=10010 AND codeValue='zimemory' AND deleted=0) ziphone_context,
+    ( SELECT codeName from orkcode WHERE codeMaster=10012 AND codeValue='zirecx' AND deleted=0) zirecx_file_path,
+    ( SELECT codeName from orkcode WHERE codeMaster=10012 AND codeValue='zimemory' AND deleted=0) ziphone_file_path
+	
+	</select>
+  
+  <select id="recordManageDAO.selectWebPathPen" parameterClass="recordPenVO" resultMap="webPathPenMap">
+
+  SELECT  db_host_name.codeName dbHostName, db_tcp_port.codeName dbTcpPort,
+        audio_host_name.codeName audioHostName,
+        audio_tcp_port.codeName audioTcpPort,
+        zip_store_path.codeName zipStorePath,
+        zirecx_context.codeName zirecxContext,
+        ziphone_context.codeName ziphoneContext,
+        zirecx_file_path.codeName zirecxFilePath,
+        ziphone_file_path.codeName ziphoneFilePath
+    FROM
+    ( SELECT codeName FROM orkcode WHERE codeMaster=10001 AND codeValue='db_host_name' AND deleted=0) db_host_name,
+    ( SELECT codeName from orkcode WHERE codeMaster=10001 AND codeValue='audio_host_name' AND deleted=0) audio_host_name,
+    ( SELECT codeName from orkcode WHERE codeMaster=10002 AND codeValue='db_tcp_port' AND deleted=0) db_tcp_port,
+    ( SELECT codeName from orkcode WHERE codeMaster=10002 AND codeValue='audio_tcp_port' AND deleted=0) audio_tcp_port,
+    ( SELECT codeName from orkcode WHERE codeMaster=10003 AND codeValue='zip_store_path' AND deleted=0) zip_store_path,
+    ( SELECT codeName from orkcode WHERE codeMaster=10010 AND codeValue='zirecx' AND deleted=0) zirecx_context,
+    ( SELECT codeName from orkcode WHERE codeMaster=10010 AND codeValue='zimemory' AND deleted=0) ziphone_context,
+    ( SELECT codeName from orkcode WHERE codeMaster=10012 AND codeValue='zirecx' AND deleted=0) zirecx_file_path,
+    ( SELECT codeName from orkcode WHERE codeMaster=10012 AND codeValue='zimemory' AND deleted=0) ziphone_file_path
+  
+  </select>
+	
+	<update id="recordManageDAO.updateMemo" parameterClass="recordEditVO">
+		<![CDATA[
+			UPDATE orkcall SET
+			      customer_name = #custName#
+				 ,call_memo = #callMemo#
+				 ,dateUpdated =  getdate()
+			WHERE id = #recId#
+			]]>		
+	</update>
+	
+	<insert id="recordManageDAO.insertDownHist" parameterClass="recordSearchVO">
+		<selectKey keyProperty="seq" resultClass="int">
+			INSERT INTO orkdownhist (user_id, call_id, down_date_time, file_name, recording_type) 
+			VALUES(#histUserId#, #histId#, getdate(), #histFileName#, #recordingType#)
+
+			SELECT SCOPE_IDENTITY() as seq
+		</selectKey>
+	</insert>
+	
+	<resultMap id="callHistoryListMap" class="kr.co.irlink.zirecx.record.service.RecordSearchVO">
+		<result property="rownum"				column="rownum"			/>
+		<result property="id"					column="id"				/>
+		<result property="groupName"			column="groupName"		/>
+		<result property="firstname"			column="firstname"		/>
+		<result property="zirecxId"				column="zirecxId"		/>
+		<result property="downDateTime"			column="downDateTime"	/>
+		<result property="fileName"				column="fileName"		/>
+		<result property="recordingType"		column="recordingType"	/>
+	</resultMap>
+	<select id="recordManageDAO.selectCallHistoryList" parameterClass="recordSearchVO" resultMap="callHistoryListMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER ($orderString$)  AS rownum, * FROM (
+				SELECT
+					hist.id, dbo.usp_get_group_path(gtu.groupId) AS groupName, usr.firstname, login.zirecxId,
+					hist.down_date_time AS downDateTime, hist.file_name AS fileName,
+					CASE 
+						WHEN hist.recording_type = 'A' THEN 'App'
+						WHEN hist.recording_type = 'P' THEN 'Pen'
+					ELSE '' END AS recordingType
+				FROM orkdownhist (NOLOCK) hist
+				LEFT OUTER JOIN orkloginstring (NOLOCK) login ON hist.user_id = login.user_id
+				LEFT OUTER JOIN orkuser (NOLOCK) usr ON hist.user_id = usr.id
+					, orkgrouptouser (NOLOCK) gtu, orkgroup (NOLOCK) grp
+				WHERE gtu.userId = usr.id
+				AND grp.id = gtu.groupId
+				AND grp.securitygroup = 0
+				AND CONVERT(CHAR(8), hist.down_date_time, 112) BETWEEN #strStartDate# AND #strEndDate#
+				
+				<!-- 권한관련 시작 -->
+				<isNotEqual property="strSessionLoginString" compareValue="admin">
+					<isEqual property="strAccessPolicy" compareValue="group">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+						</iterate>
+					</isEqual>
+		
+					<isNotEqual property="strAccessPolicy" compareValue="group">
+						<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+							<isNotEqual property="strAccessPolicy" compareValue="all">
+								AND login.zirecxId = #zirecxId#
+							</isNotEqual>
+						</isNotEqual>
+						
+						<!-- 2.0 추가  -->
+						<isEqual property="strAccessPolicy" compareValue="groupUp">
+							AND grp.id IN 
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+							</iterate>
+						</isEqual>
+						<!--  끝  -->
+					</isNotEqual>
+					
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isNotEqual>
+				
+				<isEqual property="strSessionLoginString" compareValue="admin">
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					  		#arrGroupSeq[]# 
+						</iterate>
+					</isNotEmpty>
+				</isEqual>
+				<!-- 권한관련 끝 -->
+				
+				<isNotEmpty property="schUserZirecxId">
+					AND login.zirecxId = #schUserZirecxId#
+				</isNotEmpty>
+			) r1
+		) t1
+		WHERE t1.rownum BETWEEN #firstIndex# AND #lastIndex#
+	</select>
+	
+	<select id="recordManageDAO.selectCallHistoryListTotCnt" parameterClass="recordSearchVO" resultClass="int">
+    	SELECT
+    		COUNT(*) as totCnt
+		FROM orkdownhist (NOLOCK) hist
+		LEFT OUTER JOIN orkloginstring (NOLOCK) login ON hist.user_id = login.user_id
+		LEFT OUTER JOIN orkuser (NOLOCK) usr ON hist.user_id = usr.id
+			, orkgrouptouser (NOLOCK) gtu, orkgroup (NOLOCK) grp
+		WHERE gtu.userId = usr.id
+		AND grp.id = gtu.groupId
+		AND grp.securitygroup = 0
+		AND CONVERT(CHAR(8), hist.down_date_time, 112) BETWEEN #strStartDate# AND #strEndDate#
+		
+		<!-- 권한관련 시작 -->
+		<isNotEqual property="strSessionLoginString" compareValue="admin">
+			<isEqual property="strAccessPolicy" compareValue="group">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					#arrGroupSeq[]# 
+				</iterate>
+			</isEqual>
+
+			<isNotEqual property="strAccessPolicy" compareValue="group">
+				<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+					<isNotEqual property="strAccessPolicy" compareValue="all">
+						AND login.zirecxId = #zirecxId#
+					</isNotEqual>
+				</isNotEqual>
+				
+				<!-- 2.0 추가  -->
+				<isEqual property="strAccessPolicy" compareValue="groupUp">
+					AND grp.id IN 
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+					</iterate>
+				</isEqual>
+				<!--  끝  -->
+			</isNotEqual>
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isNotEqual>
+		
+		<isEqual property="strSessionLoginString" compareValue="admin">
+			<isNotEmpty property="schGroupId">
+				AND grp.id IN 
+				<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			  		#arrGroupSeq[]# 
+				</iterate>
+			</isNotEmpty>
+		</isEqual>
+		<!-- 권한관련 끝 -->
+		
+		<isNotEmpty property="schUserZirecxId">
+			AND login.zirecxId = #schUserZirecxId#
+		</isNotEmpty>
+	</select>
+  
+  <insert id="recordManageDAO.insertPenCallInfo" parameterClass="recordPenVO">
+    <![CDATA[
+      INSERT INTO orkpen
+        (user_id
+        ,zirecxId
+        ,phone_number
+        ,customer_name
+        ,facetoface
+        ,visit_place
+        ,visit_date
+        ,visit_date_class
+        ,play_time
+        ,upload_date
+        ,recordFilePath
+        ,recordFileName
+        ,record_mode_code
+        ,deleted
+        ,disabled
+        )
+      VALUES ( #schUserZirecxId#
+          , #zirecxId#
+          , #phoneNumber#
+          , #customerName#
+          , #faceToFace#
+          , #visitPlace#
+          , #visitDate#
+          , #visitDateClass#
+          , #playTime#
+          , CONVERT(CHAR(19), GETDATE(), 20)
+          , #recordFilePath#
+          , #recordFileName#
+          , #recordModeCode#
+          , 0
+          , 0
+          )
+    ]]>
+  </insert>
+	
+</sqlMap>

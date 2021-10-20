@@ -1,0 +1,110 @@
+<%@ page contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="validator" uri="http://www.springmodules.org/tags/commons-validator" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@ page session="true"%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=5"/>
+<link type="text/css" rel="stylesheet" href="<c:url value='/css/main.css'/>"/>
+<title>MorecX</title>
+<script type="text/javascript" src="<c:url value='/jquery/js/jquery-1.9.0.js' />"></script>
+<script type="text/javascript">
+
+var win = window.dialogArguments;
+
+function search(){
+	document.getElementById("groupSeq").value = win.strGroupSeqParam;
+	$("#userPopSearchVO").attr("target","iframeUserPopList");
+	$("#userPopSearchVO").attr("action","<c:url value='/common/userPopList.do'/>");
+	$("#userPopSearchVO").submit();
+}
+
+</script>
+</head>
+<body onload="search();">
+<form:form commandName="userPopSearchVO" id="userPopSearchVO" name="userPopSearchVO" method="post">
+<input id="hidUserSeq" type="hidden" />
+<form:hidden path="groupSeq" />
+<form:hidden path="auth" />
+<table width="500px" cellpadding="0" cellspacing="0" border="0">
+	<tr>
+		<td width="12px"><img src="<c:url value='/images/background/pop_top01.gif' />" width="12px" height="45px"></td>
+		<td width="476px" height="45px" valign="top" background="<c:url value='/images/background/pop_bg_top.gif' />"><img src="<c:url value='/images/background/pop_logo.gif' />" width="91px" height="33px"></td>
+		<td width="12px"><img src="<c:url value='/images/background/pop_top02.gif' />" width="12px" height="45px"></td>					
+	</tr>
+	<tr>
+		<td background="<c:url value='/images/background/pop_bg_left.gif' />"></td>
+		<td align="center">
+      		<table width="476px" height="500px" border="0" cellspacing="0" cellpadding="0">
+        		<tr>
+        			<td width="5px"></td>
+        			<td height="30px">
+        				<table border="0" cellspacing="0" cellpadding="0">
+        					<tr>
+								<td width="5px"><img src="<c:url value='/images/icon/page_title_icon.gif' />" /></td>
+								<td width="7px"></td>
+								<td width="70px" class="page_title"><spring:message code='common.userPopup.message' /></td>
+								<td width="">&nbsp;</td>        					
+        					</tr>
+        				</table>
+        			</td>
+        			<td width="5px"></td>          			
+        		</tr>
+        		<tr>
+        			<td width="5px"></td>
+        			<td height="43px" style="background-image: url('<c:url value='/images/background/page_top_background02.gif' />')">
+        				<table border="0" cellspacing="0" cellpadding="0">
+        					<tr>
+								<td width="11px"><img src="<c:url value='/images/icon/top_brit.gif' />" /></td>
+								<td width="65px"><spring:message code='userManagerMain.search.user' /></td>
+								<td width="7px"></td>
+								<td width="100px"><form:input path="userName" cssStyle="width:90px; height:18px; border:1px solid #C3C3C3; background-color:#FFFFFF" onkeypress="if(event.keyCode == 13)search();" /></td>
+								<td width="100px"><form:input path="userId" cssStyle="width:90px; height:18px; border:1px solid #C3C3C3; background-color:#FFFFFF" onkeypress="if(event.keyCode == 13)search();" /></td>
+								<td width="40px" onclick="search();">
+									<table width="100%" cellpadding="0" cellspacing="0" border="0">
+										<tr style="cursor: hand">
+											<td width="3px" height="24px"><img src="<c:url value='/images/button/btn_orange_left.gif' />" /></td>
+											<td align="center" class="top_button" style="background-image: url('<c:url value='/images/button/btn_orange_bg.gif' />')">
+												<spring:message code='main.button.search' />
+											</td>
+											<td width="3px" height="24px"><img src="<c:url value='/images/button/btn_orange_right.gif' />" /></td>
+										</tr>
+									</table>
+								</td>
+								<td width="">&nbsp;</td>        					
+        					</tr>
+        				</table>
+        			</td>
+        			<td width="5px"></td>          			
+        		</tr>
+        		<tr>
+        			<td height="5px" colspan="3">&nbsp;</td>
+        		</tr>
+        		<tr>
+        			<td width="5px"></td>
+        			<td height="380px">
+        				<iframe id="iframeUserPopList" name="iframeUserPopList" frameborder="0" style="width: 100%; height:100%;  border: none;"></iframe>
+        			</td>
+        			<td width="5px"></td>          			
+        		</tr>
+        		<tr>
+        			<td height="5px" colspan="3">&nbsp;</td>
+        		</tr>
+      		</table>
+    	</td>
+    	<td background="<c:url value='/images/background/pop_bg_right.gif' />"></td>
+	</tr>
+	<tr>
+	    <td><img src="<c:url value='/images/background/pop_bottom01.gif' />" width="12px" height="20px"></td>
+	    <td height="20px" background="<c:url value='/images/background/pop_bg_bottom.gif' />"></td>
+	    <td><img src="<c:url value='/images/background/pop_bottom02.gif' />" width="12px" height="20px"></td>
+  	</tr>
+</table>
+</form:form>
+</body>
+</html>

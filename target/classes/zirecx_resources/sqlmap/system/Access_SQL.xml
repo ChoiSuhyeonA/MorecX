@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="AccessManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="accessSearchVO" type="kr.co.irlink.zirecx.system.service.AccessSearchVO"/>
+
+	<select id="accessManageDAO.selectAccessMenuList" parameterClass="accessSearchVO" resultClass="egovMap">
+		
+			SELECT id, REPLACE(name,'[메뉴]','') AS name
+				FROM orkprivpoint
+				WHERE name LIKE '[메뉴]%'
+				AND deleted = 0
+		
+	</select>
+	
+	<select id="accessManageDAO.selectAccessColumnList" parameterClass="accessSearchVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT id, groupName
+				FROM orkgroup grp
+				WHERE securitygroup = 1
+				AND deleted = 0
+				AND id not in(1,2,3,4)
+		]]>
+		
+	</select>
+	
+	<select id="accessManageDAO.selectAccessDataList" parameterClass="accessSearchVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT opp.id, opp.name, opp.checkbox_flag
+				FROM orkprivpoint opp
+				WHERE deleted = 0
+		]]>
+		
+	</select>
+	
+	<select id="accessManageDAO.selectAccessDetail" parameterClass="accessSearchVO" resultClass="egovMap">
+		
+			SELECT ppa.privPointId, grp.id groupId, acp.scope, ppa.accessPolicyId 
+				FROM orkprivpointtoaccesspolicy ppa, orkgroup grp 
+				LEFT OUTER JOIN orkaccesspolicy acp ON grp.id = acp.securityGroup_id 
+				WHERE ppa.accessPolicyId = acp.id 
+				AND grp.securitygroup = 1 AND grp.id NOT IN (1,2,3,4) AND grp.deleted = 0
+		
+	</select>
+	
+	<delete id="accessManageDAO.deletePolicy1" parameterClass="accessSearchVO">
+		<![CDATA[
+		DELETE FROM orkprivpointtoaccesspolicy
+			WHERE accessPolicyId = #hidAccessPolicyId#
+		]]>
+	</delete>
+	
+	<delete id="accessManageDAO.deletePolicy2" parameterClass="accessSearchVO">
+		<![CDATA[
+		DELETE FROM orkaccesspolicy 					
+			WHERE id = #hidAccessPolicyId#
+		]]>
+	</delete>
+	
+	<update id="accessManageDAO.updatePolicy" parameterClass="accessSearchVO">
+		<![CDATA[
+			UPDATE orkaccesspolicy SET
+			scope = #strValue#
+			WHERE id = #hidAccessPolicyId#
+		]]>
+	</update>
+	
+	<insert id="accessManageDAO.insertPolicy1" parameterClass="accessSearchVO">
+		<selectKey keyProperty="id" resultClass="int">
+			INSERT INTO orkaccesspolicy (
+			      scope
+			    , securityGroup_id
+			) VALUES (
+			      #strValue#
+			    , #strGroupId#
+			)
+		
+			SELECT SCOPE_IDENTITY() as id
+		</selectKey>
+	</insert>
+	
+	<insert id="accessManageDAO.insertPolicy2" parameterClass="accessSearchVO">
+		<![CDATA[
+		INSERT INTO orkprivpointtoaccesspolicy (
+		      privPointId
+		    , accessPolicyId
+		) VALUES (
+		      #strPrivPointId#
+		    , #strLastInsertID#
+		)
+		]]>
+	</insert>
+</sqlMap>

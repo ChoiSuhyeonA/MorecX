@@ -1,0 +1,1606 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="LinkageReportManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="reportSearchVO" type="kr.co.irlink.zirecx.report.service.ReportSearchVO"/>
+	<typeAlias  alias="reportHourlySearchVO" type="kr.co.irlink.zirecx.report.service.ReportSearchVO"/>
+	<typeAlias  alias="reportSearchDurationVO" type="kr.co.irlink.zirecx.report.service.ReportSearchDurationVO"/>
+	
+	<!-- 콜통계 연동형(상담원별) -->
+	<select id="linkageReportManageDAO.selectLinkageReportUserList" parameterClass="reportSearchVO" resultClass="egovMap">
+		<!-- 기존자료 & 당일자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+			<isEqual property="chkSql2" compareValue="1">
+				SELECT  id, groupId, firstName, zirecxId, phonenumber
+					, SUM(out_duration_call) AS out_duration_call 
+					, SUM(in_duration_call) AS in_duration_call 
+					, SUM(out_count_call) AS out_count_call 
+					, SUM(in_count_call) AS in_count_call 
+				FROM    ( 
+			</isEqual>
+		</isEqual>
+		
+		<!-- 기존자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+			SELECT	usr.id 
+					, dbo.usp_get_group_path(gtu.groupId) AS groupId 
+					, usr.firstName 
+					, login.zirecxId 
+					, usr.phonenumber 
+					, SUM(ISNULL(rep.out_duration_call, 0)) AS out_duration_call 
+					, SUM(ISNULL(rep.in_duration_call, 0)) AS in_duration_call 
+					, SUM(ISNULL(rep.out_count_call, 0)) AS out_count_call 
+					, SUM(ISNULL(rep.in_count_call,0)) AS in_count_call 
+				FROM	orkuser usr 
+				LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id 
+				LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id 
+				<isEmpty property="onlyRealUser">    <!-- 실사용자만 표시 미체크 -->
+					LEFT OUTER JOIN orkreportdaily rep ON (rep.zirecxId = login.zirecxId 
+					AND rep.call_date BETWEEN #strStartDate# AND #strEndDate# )
+					, orkgroup grp 
+					WHERE grp.id = gtu.groupId 
+					AND grp.securityGroup = 0 
+				</isEmpty>
+				<isNotEmpty property="onlyRealUser">    <!-- 실사용자만 표시 체크 -->
+					, orkreportdaily rep 
+					, orkgroup grp 
+					WHERE grp.securityGroup = 0 
+					AND rep.call_date BETWEEN #strStartDate# AND #strEndDate#
+					AND grp.id = gtu.groupId 
+					AND rep.zirecxId = login.zirecxId 			 
+				</isNotEmpty>
+				
+				<!-- 권한관련 시작  -->
+				<isNotEqual property="sessionZirecxId" compareValue="admin">    <!-- admin 이 아닐 때 -->
+					<isEqual property="accessPolicy" compareValue="group">    <!-- group 권한 이면 -->
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+					
+					<!-- 그룹업 추가 -->
+					<isEqual property="accessPolicy" compareValue="groupUp">
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+					
+					<isEqual property="accessPolicy" compareValue="own">    <!-- own 권한이면 -->
+						AND login.zirecxId = #sessionZirecxId#
+					</isEqual>
+					
+					<isNotEmpty property="schGroupId">    <!-- 검색조건에 그룹이 선택되었다면 -->
+						<isEqual property="accessPolicy" compareValue="all">
+							AND grp.id IN
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+						    </iterate>
+						</isEqual>
+					</isNotEmpty>				
+				</isNotEqual>
+				<!-- admin 이면 -->
+				<isEqual property="sessionZirecxId" compareValue="admin">
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+					    	</iterate>
+					</isNotEmpty>
+				</isEqual>			
+				<!-- 권한관련 끝  -->
+				
+				<isEmpty property="includeRetired">    <!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+					AND usr.deleted = 0
+				</isEmpty>
+			GROUP BY usr.id, groupId, usr.firstName, login.zirecxId, usr.phonenumber
+		</isEqual>
+		
+		<!-- 기존자료 & 당일자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+			<isEqual property="chkSql2" compareValue="1">
+				UNION ALL 
+			</isEqual>
+		</isEqual>
+			
+		<!-- 당일자료 검색시 -->
+	    <isEqual property="chkSql2" compareValue="1">
+			SELECT  usr.id 
+				, dbo.usp_get_group_path(gtu.groupId) AS groupId 
+				, usr.firstName 
+				, login.zirecxId 
+				, usr.phonenumber 
+				, SUM(CASE inoutbound_code WHEN 'O' THEN duration_call ELSE 0 END) AS out_duration_call 
+				, SUM(CASE inoutbound_code WHEN 'I' THEN duration_call ELSE 0 END) AS in_duration_call 
+				, SUM(CASE inoutbound_code WHEN 'O' THEN 1 ELSE 0 END) AS out_count_call 
+				, SUM(CASE inoutbound_code WHEN 'I' THEN 1 ELSE 0 END) AS in_count_call
+			FROM    orkuser usr 
+			LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id 
+			LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id 
+			<isEmpty property="onlyRealUser">
+				LEFT OUTER JOIN orkcall cal ON cal.user_id = login.zirecxid
+				AND cal.call_start_date = #strToday#
+				, orkgroup grp 
+				WHERE grp.id = gtu.groupId 
+				AND grp.securityGroup = 0 
+			</isEmpty>
+			<isNotEmpty property="onlyRealUser">
+				, orkcall cal 
+				, orkgroup grp 
+				WHERE grp.id = gtu.groupId 
+				AND cal.user_id = login.zirecxid 
+				AND call_start_date = #strToday#
+				AND grp.securityGroup = 0 
+			</isNotEmpty>
+			
+			<!-- 권한관련 시작  -->
+				<isNotEqual property="sessionZirecxId" compareValue="admin">    <!-- admin 이 아닐 때 -->
+					<isEqual property="accessPolicy" compareValue="group">    <!-- group 권한 이면 -->
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+					
+					<!-- 그룹업 추가 -->
+					<isEqual property="accessPolicy" compareValue="groupUp">
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+					
+					<isEqual property="accessPolicy" compareValue="own">    <!-- own 권한이면 -->
+						AND login.zirecxId = #sessionZirecxId#
+					</isEqual>
+					
+					<isNotEmpty property="schGroupId">    <!-- 검색조건에 그룹이 선택되었다면 -->
+						<isEqual property="accessPolicy" compareValue="all">
+							AND grp.id IN
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+						    </iterate>
+						</isEqual>
+					</isNotEmpty>				
+				</isNotEqual>
+				<!-- admin 이면 -->
+				<isEqual property="sessionZirecxId" compareValue="admin">
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+					    	</iterate>
+					</isNotEmpty>
+				</isEqual>			
+				<!-- 권한관련 끝  -->
+				
+				<isEmpty property="includeRetired">    <!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+					AND usr.deleted = 0
+				</isEmpty>
+			GROUP BY usr.id, groupId, usr.firstName, login.zirecxId, usr.phonenumber
+		</isEqual> 
+		
+		<isEqual property="chkSql1" compareValue="1">
+			<isEqual property="chkSql2" compareValue="1">
+				) t1 
+				GROUP BY id, groupId, firstName, zirecxId, phonenumber
+			</isEqual>
+		</isEqual>
+		ORDER BY $orderKey$ $orderType$
+	</select>
+	
+	<!-- 콜통계 연동형(조직별) -->
+	<select id="linkageReportManageDAO.selectLinkageReportGroupList" parameterClass="reportSearchVO" resultClass="egovMap">
+		<!-- 기존자료 & 당일자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+			<isEqual property="chkSql2" compareValue="1">
+				SELECT  groupId
+					, SUM(out_duration_call) AS out_duration_call 
+					, SUM(in_duration_call) AS in_duration_call 
+					, SUM(out_count_call) AS out_count_call 
+					, SUM(in_count_call) AS in_count_call 
+				FROM    ( 
+			</isEqual>
+		</isEqual>
+		
+		<!-- 기존자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+			SELECT	dbo.usp_get_group_path(gtu.groupId) AS groupId 
+					, SUM(ISNULL(rep.out_duration_call, 0)) AS out_duration_call 
+					, SUM(ISNULL(rep.in_duration_call, 0)) AS in_duration_call 
+					, SUM(ISNULL(rep.out_count_call, 0)) AS out_count_call 
+					, SUM(ISNULL(rep.in_count_call,0)) AS in_count_call 
+				FROM	orkuser usr 
+				LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id 
+				LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id 
+				<isEmpty property="onlyRealUser">    <!-- 실사용자만 표시 미체크 -->
+					LEFT OUTER JOIN orkreportdaily rep ON (rep.zirecxId = login.zirecxId 
+					AND rep.call_date BETWEEN #strStartDate# AND #strEndDate# )
+					, orkgroup grp 
+					WHERE grp.id = gtu.groupId 
+					AND grp.securityGroup = 0 
+				</isEmpty>
+				<isNotEmpty property="onlyRealUser">    <!-- 실사용자만 표시 체크 -->
+					, orkreportdaily rep 
+					, orkgroup grp 
+					WHERE grp.securityGroup = 0 
+					AND rep.call_date BETWEEN #strStartDate# AND #strEndDate#
+					AND grp.id = gtu.groupId 
+					AND rep.zirecxId = login.zirecxId 			 
+				</isNotEmpty>
+				
+				<!-- 권한관련 시작  -->
+				<isNotEqual property="sessionZirecxId" compareValue="admin">    <!-- admin 이 아닐 때 -->
+					<isEqual property="accessPolicy" compareValue="group">    <!-- group 권한 이면 -->
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+					
+					<isEqual property="accessPolicy" compareValue="groupUp">    <!-- groupUp 권한 이면 -->
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+					
+					<isEqual property="accessPolicy" compareValue="own">    <!-- own 권한이면 -->
+						AND login.zirecxId = #sessionZirecxId#
+					</isEqual>
+					
+					<isNotEmpty property="schGroupId">    <!-- 검색조건에 그룹이 선택되었다면 -->
+						<isEqual property="accessPolicy" compareValue="all">
+							AND grp.id IN
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+						    </iterate>
+						</isEqual>
+					</isNotEmpty>				
+				</isNotEqual>
+				<!-- admin 이면 -->
+				<isEqual property="sessionZirecxId" compareValue="admin">
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+					    	</iterate>
+					</isNotEmpty>
+				</isEqual>			
+				<!-- 권한관련 끝  -->
+				
+				<isEmpty property="includeRetired">    <!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+					AND usr.deleted = 0
+				</isEmpty>
+			GROUP BY dbo.usp_get_group_path(gtu.groupId)
+		</isEqual>
+		
+		<!-- 기존자료 & 당일자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+			<isEqual property="chkSql2" compareValue="1">
+				UNION ALL 
+			</isEqual>
+		</isEqual>
+			
+		<!-- 당일자료 검색시 -->
+	    <isEqual property="chkSql2" compareValue="1">
+			SELECT dbo.usp_get_group_path(gtu.groupId) AS groupId 
+				, SUM(CASE inoutbound_code WHEN 'O' THEN duration_call ELSE 0 END) AS out_duration_call 
+				, SUM(CASE inoutbound_code WHEN 'I' THEN duration_call ELSE 0 END) AS in_duration_call 
+				, SUM(CASE inoutbound_code WHEN 'O' THEN 1 ELSE 0 END) AS out_count_call 
+				, SUM(CASE inoutbound_code WHEN 'I' THEN 1 ELSE 0 END) AS in_count_call
+			FROM    orkuser usr 
+			LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id 
+			LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id 
+			<isEmpty property="onlyRealUser">
+				LEFT OUTER JOIN orkcall cal ON cal.user_id = login.zirecxid
+				AND cal.call_start_date = #strToday#
+				, orkgroup grp 
+				WHERE grp.id = gtu.groupId 
+				AND grp.securityGroup = 0 
+			</isEmpty>
+			<isNotEmpty property="onlyRealUser">
+				, orkcall cal 
+				, orkgroup grp 
+				WHERE grp.id = gtu.groupId 
+				AND cal.user_id = login.zirecxid 
+				AND call_start_date = #strToday#
+				AND grp.securityGroup = 0 
+			</isNotEmpty>
+			
+			<!-- 권한관련 시작  -->
+				<isNotEqual property="sessionZirecxId" compareValue="admin">    <!-- admin 이 아닐 때 -->
+					<isEqual property="accessPolicy" compareValue="group">    <!-- group 권한 이면 -->
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+					
+					<isEqual property="accessPolicy" compareValue="groupUp">    <!-- groupUp 권한 이면 -->
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+					
+					<isEqual property="accessPolicy" compareValue="own">    <!-- own 권한이면 -->
+						AND login.zirecxId = #sessionZirecxId#
+					</isEqual>
+					
+					<isNotEmpty property="schGroupId">    <!-- 검색조건에 그룹이 선택되었다면 -->
+						<isEqual property="accessPolicy" compareValue="all">
+							AND grp.id IN
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+						    </iterate>
+						</isEqual>
+					</isNotEmpty>				
+				</isNotEqual>
+				<!-- admin 이면 -->
+				<isEqual property="sessionZirecxId" compareValue="admin">
+					<isNotEmpty property="schGroupId">
+						AND grp.id IN
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+					    	</iterate>
+					</isNotEmpty>
+				</isEqual>			
+				<!-- 권한관련 끝  -->
+				
+				<isEmpty property="includeRetired">    <!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+					AND usr.deleted = 0
+				</isEmpty>
+			GROUP BY dbo.usp_get_group_path(gtu.groupId) 
+		</isEqual> 
+		
+		<isEqual property="chkSql1" compareValue="1">
+			<isEqual property="chkSql2" compareValue="1">
+				) t1 
+				GROUP BY groupId
+			</isEqual>
+		</isEqual>
+		ORDER BY $orderKey$ $orderType$
+	</select>
+	
+	
+	
+	
+<!-- 시간대별 콜통계 시작 -->		
+	
+	
+	<!-- 시간대별 콜통계(연동형) -->
+	<select id="linkageReportManageDAO.selectLinkageHourlyReportUserList" parameterClass="reportHourlySearchVO" resultClass="egovMap">
+		SELECT * 
+		, out_duration_call_00_09  +  
+		in_duration_call_00_09   +  
+		out_duration_call_09_10  +  
+		in_duration_call_09_10   +  
+		out_duration_call_10_11  +  
+		in_duration_call_10_11   +  
+		out_duration_call_11_12  +  
+		in_duration_call_11_12   +  
+		out_duration_call_12_13  +  
+		in_duration_call_12_13   +  
+		out_duration_call_13_14  +  
+		in_duration_call_13_14   +  
+		out_duration_call_14_15  +  
+		in_duration_call_14_15   +  
+		out_duration_call_15_16  +  
+		in_duration_call_15_16   +  
+		out_duration_call_16_17  +  
+		in_duration_call_16_17   +  
+		out_duration_call_17_18  +  
+		in_duration_call_17_18   +  
+		out_duration_call_18_19  +  
+		in_duration_call_18_19   +  
+		out_duration_call_19_20  +  
+		in_duration_call_19_20   +  
+		out_duration_call_20_21  +  
+		in_duration_call_20_21   +  
+		out_duration_call_21_22  +  
+		in_duration_call_21_22   +  
+		out_duration_call_22_23  +  
+		in_duration_call_22_23   +  
+		out_duration_call_23_24  +  
+		in_duration_call_23_24  AS sum_dur
+		, 
+		
+		out_duration_call_00_09  +  
+		out_duration_call_09_10  +  
+		out_duration_call_10_11  +  
+		out_duration_call_11_12  +  
+		out_duration_call_12_13  +  
+		out_duration_call_13_14  +  
+		out_duration_call_14_15  +  
+		out_duration_call_15_16  +  
+		out_duration_call_16_17  +  
+		out_duration_call_17_18  +  
+		out_duration_call_18_19  +  
+		out_duration_call_19_20  +  
+		out_duration_call_20_21  +  
+		out_duration_call_21_22  +  
+		out_duration_call_22_23  +  
+		out_duration_call_23_24 AS sum_dur_out
+		,
+		in_duration_call_00_09  +  
+		in_duration_call_09_10  +  
+		in_duration_call_10_11  +  
+		in_duration_call_11_12  +  
+		in_duration_call_12_13  +  
+		in_duration_call_13_14  +  
+		in_duration_call_14_15  +  
+		in_duration_call_15_16  +  
+		in_duration_call_16_17  +  
+		in_duration_call_17_18  +  
+		in_duration_call_18_19  +  
+		in_duration_call_19_20  +  
+		in_duration_call_20_21  +  
+		in_duration_call_21_22  +  
+		in_duration_call_22_23  +  
+		in_duration_call_23_24 AS sum_dur_in
+		   
+		,
+		out_count_call_00_09  +
+		in_count_call_00_09   +
+		out_count_call_09_10  +
+		in_count_call_09_10   +
+		out_count_call_10_11  +
+		in_count_call_10_11   +
+		out_count_call_11_12  +
+		in_count_call_11_12   +
+		out_count_call_12_13  +
+		in_count_call_12_13   +
+		out_count_call_13_14  +
+		in_count_call_13_14   +
+		out_count_call_14_15  +
+		in_count_call_14_15   +
+		out_count_call_15_16  +
+		in_count_call_15_16   +
+		out_count_call_16_17  +
+		in_count_call_16_17   +
+		out_count_call_17_18  +
+		in_count_call_17_18   +
+		out_count_call_18_19  +
+		in_count_call_18_19   +
+		out_count_call_19_20  +
+		in_count_call_19_20   +
+		out_count_call_20_21  +
+		in_count_call_20_21   +
+		out_count_call_21_22  +
+		in_count_call_21_22   +
+		out_count_call_22_23  +
+		in_count_call_22_23   +
+		out_count_call_23_24  +
+		in_count_call_23_24   AS sum_cnt
+		, 
+		
+		out_count_call_00_09  +
+		out_count_call_09_10  +
+		out_count_call_10_11  +
+		out_count_call_11_12  +
+		out_count_call_12_13  +
+		out_count_call_13_14  +
+		out_count_call_14_15  +
+		out_count_call_15_16  +
+		out_count_call_16_17  +
+		out_count_call_17_18  +
+		out_count_call_18_19  +
+		out_count_call_19_20  +
+		out_count_call_20_21  +
+		out_count_call_21_22  +
+		out_count_call_22_23  +
+		out_count_call_23_24   AS sum_cnt_out
+		,
+		
+		in_count_call_00_09  +
+		in_count_call_09_10  +
+		in_count_call_10_11  +
+		in_count_call_11_12  +
+		in_count_call_12_13  +
+		in_count_call_13_14  +
+		in_count_call_14_15  +
+		in_count_call_15_16  +
+		in_count_call_16_17  +
+		in_count_call_17_18  +
+		in_count_call_18_19  +
+		in_count_call_19_20  +
+		in_count_call_20_21  +
+		in_count_call_21_22  +
+		in_count_call_22_23  +
+		in_count_call_23_24   AS sum_cnt_in
+		
+		from (
+		<!-- 기존자료 & 당일자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+		<isEqual property="chkSql2" compareValue="1">
+		<![CDATA[
+		
+		
+		SELECT	id
+			, groupId
+			, firstName
+			, zirecxId
+			, phonenumber
+			
+			
+			, SUM(out_duration_call_00_09) AS out_duration_call_00_09, SUM(in_duration_call_00_09) AS in_duration_call_00_09 
+			, SUM(out_duration_call_09_10) AS out_duration_call_09_10, SUM(in_duration_call_09_10) AS in_duration_call_09_10 
+			, SUM(out_duration_call_10_11) AS out_duration_call_10_11, SUM(in_duration_call_10_11) AS in_duration_call_10_11 
+			, SUM(out_duration_call_11_12) AS out_duration_call_11_12, SUM(in_duration_call_11_12) AS in_duration_call_11_12
+			, SUM(out_duration_call_12_13) AS out_duration_call_12_13, SUM(in_duration_call_12_13) AS in_duration_call_12_13
+			, SUM(out_duration_call_13_14) AS out_duration_call_13_14, SUM(in_duration_call_13_14) AS in_duration_call_13_14
+			, SUM(out_duration_call_14_15) AS out_duration_call_14_15, SUM(in_duration_call_14_15) AS in_duration_call_14_15
+			, SUM(out_duration_call_15_16) AS out_duration_call_15_16, SUM(in_duration_call_15_16) AS in_duration_call_15_16
+			, SUM(out_duration_call_16_17) AS out_duration_call_16_17, SUM(in_duration_call_16_17) AS in_duration_call_16_17
+			, SUM(out_duration_call_17_18) AS out_duration_call_17_18, SUM(in_duration_call_17_18) AS in_duration_call_17_18
+			, SUM(out_duration_call_18_19) AS out_duration_call_18_19, SUM(in_duration_call_18_19) AS in_duration_call_18_19
+			, SUM(out_duration_call_19_20) AS out_duration_call_19_20, SUM(in_duration_call_19_20) AS in_duration_call_19_20
+			, SUM(out_duration_call_20_21) AS out_duration_call_20_21, SUM(in_duration_call_20_21) AS in_duration_call_20_21
+			, SUM(out_duration_call_21_22) AS out_duration_call_21_22, SUM(in_duration_call_21_22) AS in_duration_call_21_22
+			, SUM(out_duration_call_22_23) AS out_duration_call_22_23, SUM(in_duration_call_22_23) AS in_duration_call_22_23
+			, SUM(out_duration_call_23_24) AS out_duration_call_23_24, SUM(in_duration_call_23_24) AS in_duration_call_23_24
+			, SUM(out_count_call_00_09) AS out_count_call_00_09, SUM(in_count_call_00_09) AS in_count_call_00_09
+			, SUM(out_count_call_09_10) AS out_count_call_09_10, SUM(in_count_call_09_10) AS in_count_call_09_10
+			, SUM(out_count_call_10_11) AS out_count_call_10_11, SUM(in_count_call_10_11) AS in_count_call_10_11
+			, SUM(out_count_call_11_12) AS out_count_call_11_12, SUM(in_count_call_11_12) AS in_count_call_11_12
+			, SUM(out_count_call_12_13) AS out_count_call_12_13, SUM(in_count_call_12_13) AS in_count_call_12_13
+			, SUM(out_count_call_13_14) AS out_count_call_13_14, SUM(in_count_call_13_14) AS in_count_call_13_14
+			, SUM(out_count_call_14_15) AS out_count_call_14_15, SUM(in_count_call_14_15) AS in_count_call_14_15
+			, SUM(out_count_call_15_16) AS out_count_call_15_16, SUM(in_count_call_15_16) AS in_count_call_15_16
+			, SUM(out_count_call_16_17) AS out_count_call_16_17, SUM(in_count_call_16_17) AS in_count_call_16_17
+			, SUM(out_count_call_17_18) AS out_count_call_17_18, SUM(in_count_call_17_18) AS in_count_call_17_18
+			, SUM(out_count_call_18_19) AS out_count_call_18_19, SUM(in_count_call_18_19) AS in_count_call_18_19
+			, SUM(out_count_call_19_20) AS out_count_call_19_20, SUM(in_count_call_19_20) AS in_count_call_19_20
+			, SUM(out_count_call_20_21) AS out_count_call_20_21, SUM(in_count_call_20_21) AS in_count_call_20_21
+			, SUM(out_count_call_21_22) AS out_count_call_21_22, SUM(in_count_call_21_22) AS in_count_call_21_22
+			, SUM(out_count_call_22_23) AS out_count_call_22_23, SUM(in_count_call_22_23) AS in_count_call_22_23
+			, SUM(out_count_call_23_24) AS out_count_call_23_24, SUM(in_count_call_23_24) AS in_count_call_23_24 
+		]]>
+		FROM    ( 
+		</isEqual>
+		</isEqual>
+		<!-- 기존자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+		<![CDATA[
+			SELECT  usr.id AS id
+				, dbo.usp_get_group_path(gtu.groupId) AS groupId 
+				, usr.firstName AS firstName
+				, login.zirecxId AS zirecxId
+				, usr.phonenumber AS phonenumber
+				, (SUM(ISNULL(rpt.out_duration_call_00_01, 0)) + SUM(ISNULL(rpt.out_duration_call_01_02, 0)) + 
+					SUM(ISNULL(rpt.out_duration_call_02_03, 0)) + SUM(ISNULL(rpt.out_duration_call_03_04, 0)) + 
+					SUM(ISNULL(rpt.out_duration_call_04_05, 0)) + SUM(ISNULL(rpt.out_duration_call_05_06, 0)) + 
+					SUM(ISNULL(rpt.out_duration_call_06_07, 0)) + SUM(ISNULL(rpt.out_duration_call_07_08, 0)) + 
+					SUM(ISNULL(rpt.out_duration_call_08_09, 0))) as out_duration_call_00_09 
+				, (SUM(ISNULL(rpt.in_duration_call_00_01, 0)) + SUM(ISNULL(rpt.in_duration_call_01_02, 0)) + 
+					SUM(ISNULL(rpt.in_duration_call_02_03, 0)) + SUM(ISNULL(rpt.in_duration_call_03_04, 0)) + 
+					SUM(ISNULL(rpt.in_duration_call_04_05, 0)) + SUM(ISNULL(rpt.in_duration_call_05_06, 0)) + 
+					SUM(ISNULL(rpt.in_duration_call_06_07, 0)) + SUM(ISNULL(rpt.in_duration_call_07_08, 0)) + 
+					SUM(ISNULL(rpt.in_duration_call_08_09, 0))) as in_duration_call_00_09 
+				, SUM(ISNULL(rpt.out_duration_call_09_10, 0)) AS out_duration_call_09_10 
+				, SUM(ISNULL(rpt.in_duration_call_09_10, 0)) AS in_duration_call_09_10 
+				, SUM(ISNULL(rpt.out_duration_call_10_11, 0)) AS out_duration_call_10_11 
+				, SUM(ISNULL(rpt.in_duration_call_10_11, 0)) AS in_duration_call_10_11 
+				, SUM(ISNULL(rpt.out_duration_call_11_12, 0)) AS out_duration_call_11_12 
+				, SUM(ISNULL(rpt.in_duration_call_11_12, 0)) AS in_duration_call_11_12 
+				, SUM(ISNULL(rpt.out_duration_call_12_13, 0)) AS out_duration_call_12_13 
+				, SUM(ISNULL(rpt.in_duration_call_12_13, 0)) AS in_duration_call_12_13 
+				, SUM(ISNULL(rpt.out_duration_call_13_14, 0)) AS out_duration_call_13_14 
+				, SUM(ISNULL(rpt.in_duration_call_13_14, 0)) AS in_duration_call_13_14 
+				, SUM(ISNULL(rpt.out_duration_call_14_15, 0)) AS out_duration_call_14_15 
+				, SUM(ISNULL(rpt.in_duration_call_14_15, 0)) AS in_duration_call_14_15 
+				, SUM(ISNULL(rpt.out_duration_call_15_16, 0)) AS out_duration_call_15_16 
+				, SUM(ISNULL(rpt.in_duration_call_15_16, 0)) AS in_duration_call_15_16 
+				, SUM(ISNULL(rpt.out_duration_call_16_17, 0)) AS out_duration_call_16_17 
+				, SUM(ISNULL(rpt.in_duration_call_16_17, 0)) AS in_duration_call_16_17
+				, SUM(ISNULL(rpt.out_duration_call_17_18, 0)) AS out_duration_call_17_18 
+				, SUM(ISNULL(rpt.in_duration_call_17_18, 0)) AS in_duration_call_17_18 
+				, SUM(ISNULL(rpt.out_duration_call_18_19, 0)) AS out_duration_call_18_19 
+				, SUM(ISNULL(rpt.in_duration_call_18_19, 0)) AS in_duration_call_18_19 
+				, SUM(ISNULL(rpt.out_duration_call_19_20, 0)) AS out_duration_call_19_20 
+				, SUM(ISNULL(rpt.in_duration_call_19_20, 0)) AS in_duration_call_19_20 
+				, SUM(ISNULL(rpt.out_duration_call_20_21, 0)) AS out_duration_call_20_21 
+				, SUM(ISNULL(rpt.in_duration_call_20_21, 0)) AS in_duration_call_20_21 
+				, SUM(ISNULL(rpt.out_duration_call_21_22, 0)) AS out_duration_call_21_22 
+				, SUM(ISNULL(rpt.in_duration_call_21_22, 0)) AS in_duration_call_21_22 
+				, SUM(ISNULL(rpt.out_duration_call_22_23, 0)) AS out_duration_call_22_23 
+				, SUM(ISNULL(rpt.in_duration_call_22_23, 0)) AS in_duration_call_22_23 
+				, SUM(ISNULL(rpt.out_duration_call_23_24, 0)) AS out_duration_call_23_24 
+				, SUM(ISNULL(rpt.in_duration_call_23_24, 0)) AS in_duration_call_23_24 
+				, (SUM(ISNULL(rpt.out_count_call_00_01, 0)) + SUM(ISNULL(rpt.out_count_call_01_02, 0)) + 
+					SUM(ISNULL(rpt.out_count_call_02_03, 0)) + SUM(ISNULL(rpt.out_count_call_03_04, 0)) + 
+					SUM(ISNULL(rpt.out_count_call_04_05, 0)) + SUM(ISNULL(rpt.out_count_call_05_06, 0)) + 
+					SUM(ISNULL(rpt.out_count_call_06_07, 0)) + SUM(ISNULL(rpt.out_count_call_07_08, 0)) + 
+					SUM(ISNULL(rpt.out_count_call_08_09, 0))) as out_count_call_00_09 
+				, (SUM(ISNULL(rpt.in_count_call_00_01, 0)) + SUM(ISNULL(rpt.in_count_call_01_02, 0)) + 
+					SUM(ISNULL(rpt.in_count_call_02_03, 0)) + SUM(ISNULL(rpt.in_count_call_03_04, 0)) + 
+					SUM(ISNULL(rpt.in_count_call_04_05, 0)) + SUM(ISNULL(rpt.in_count_call_05_06, 0)) + 
+					SUM(ISNULL(rpt.in_count_call_06_07, 0)) + SUM(ISNULL(rpt.in_count_call_07_08, 0)) + 
+					SUM(ISNULL(rpt.in_count_call_08_09, 0))) as in_count_call_00_09 
+				, SUM(ISNULL(rpt.out_count_call_09_10, 0)) AS out_count_call_09_10 
+				, SUM(ISNULL(rpt.in_count_call_09_10, 0)) AS in_count_call_09_10 
+				, SUM(ISNULL(rpt.out_count_call_10_11, 0)) AS out_count_call_10_11 
+				, SUM(ISNULL(rpt.in_count_call_10_11, 0)) AS in_count_call_10_11 
+				, SUM(ISNULL(rpt.out_count_call_11_12, 0)) AS out_count_call_11_12 
+				, SUM(ISNULL(rpt.in_count_call_11_12, 0)) AS in_count_call_11_12 
+				, SUM(ISNULL(rpt.out_count_call_12_13, 0)) AS out_count_call_12_13 
+				, SUM(ISNULL(rpt.in_count_call_12_13, 0)) AS in_count_call_12_13 
+				, SUM(ISNULL(rpt.out_count_call_13_14, 0)) AS out_count_call_13_14 
+				, SUM(ISNULL(rpt.in_count_call_13_14, 0)) AS in_count_call_13_14 
+				, SUM(ISNULL(rpt.out_count_call_14_15, 0)) AS out_count_call_14_15 
+				, SUM(ISNULL(rpt.in_count_call_14_15, 0)) AS in_count_call_14_15 
+				, SUM(ISNULL(rpt.out_count_call_15_16, 0)) AS out_count_call_15_16 
+				, SUM(ISNULL(rpt.in_count_call_15_16, 0)) AS in_count_call_15_16 
+				, SUM(ISNULL(rpt.out_count_call_16_17, 0)) AS out_count_call_16_17 
+				, SUM(ISNULL(rpt.in_count_call_16_17, 0)) AS in_count_call_16_17 
+				, SUM(ISNULL(rpt.out_count_call_17_18, 0)) AS out_count_call_17_18 
+				, SUM(ISNULL(rpt.in_count_call_17_18, 0)) AS in_count_call_17_18 
+				, SUM(ISNULL(rpt.out_count_call_18_19, 0)) AS out_count_call_18_19 
+				, SUM(ISNULL(rpt.in_count_call_18_19, 0)) AS in_count_call_18_19 
+				, SUM(ISNULL(rpt.out_count_call_19_20, 0)) AS out_count_call_19_20 
+				, SUM(ISNULL(rpt.in_count_call_19_20, 0)) AS in_count_call_19_20 
+				, SUM(ISNULL(rpt.out_count_call_20_21, 0)) AS out_count_call_20_21 
+				, SUM(ISNULL(rpt.in_count_call_20_21, 0)) AS in_count_call_20_21 
+				, SUM(ISNULL(rpt.out_count_call_21_22, 0)) AS out_count_call_21_22 
+				, SUM(ISNULL(rpt.in_count_call_21_22, 0)) AS in_count_call_21_22 
+				, SUM(ISNULL(rpt.out_count_call_22_23, 0)) AS out_count_call_22_23 
+				, SUM(ISNULL(rpt.in_count_call_22_23, 0)) AS in_count_call_22_23 
+				, SUM(ISNULL(rpt.out_count_call_23_24, 0)) AS out_count_call_23_24 
+				, SUM(ISNULL(rpt.in_count_call_23_24, 0)) AS in_count_call_23_24 
+			FROM	orkuser usr 
+			LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id 
+			LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id 
+			]]>
+			<isEmpty property="onlyRealUser">
+			LEFT OUTER JOIN orkreportdaily rpt ON rpt.zirecxId = login.zirecxId 
+			AND rpt.call_date BETWEEN #strStartDate# AND #strEndDate#
+			, orkgroup grp 
+			WHERE grp.id = gtu.groupId 
+			AND grp.securityGroup = 0 
+			</isEmpty>
+			<isNotEmpty property="onlyRealUser">
+			, orkreportdaily rpt 
+			, orkgroup grp 
+			WHERE grp.id = gtu.groupId 
+			AND rpt.zirecxId = login.zirecxId 
+			AND rpt.call_date BETWEEN #strStartDate# AND #strEndDate#
+			AND grp.securityGroup = 0 
+			</isNotEmpty>
+<!-- 권한관련 시작 (orksegment 조회시) -->
+			<isNotEqual property="sessionZirecxId" compareValue="admin">
+				<isEqual property="accessPolicy" compareValue="group">
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="groupUp">    <!-- groupUp 권한 이면 -->
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+					
+				
+				<isEqual property="accessPolicy" compareValue="own">
+					AND login.zirecxId = #sessionZirecxId#
+				</isEqual>
+				
+				<isNotEmpty property="schGroupId">
+					<isEqual property="accessPolicy" compareValue="all">
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+				</isNotEmpty>
+			</isNotEqual>
+			<isEqual property="sessionZirecxId" compareValue="admin">
+				<isNotEmpty property="schGroupId">
+			AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			#arrGroupSeq[]# 
+				    </iterate>
+				</isNotEmpty>
+			</isEqual>
+	<!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+			<isEmpty property="includeRetired">
+			AND usr.deleted = 0
+			</isEmpty>
+<!-- 권한관련 끝 (orksegment 조회시) -->
+			GROUP BY usr.id, dbo.usp_get_group_path(gtu.groupId), usr.firstName, login.zirecxId, usr.phonenumber
+		</isEqual>
+		<!-- 기존자료 & 당일자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+		<isEqual property="chkSql2" compareValue="1">
+			UNION ALL 
+		</isEqual>
+		</isEqual>
+		<!-- 당일자료 검색시 -->
+		<isEqual property="chkSql2" compareValue="1">
+		<![CDATA[
+			SELECT	usr.id AS id
+				, dbo.usp_get_group_path(gtu.groupId) AS groupId 
+				, usr.firstName AS firstName
+				, login.zirecxId AS zirecxId
+				, usr.phonenumber AS phonenumber
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '00' AND LEFT(cal.call_start_time, 2) < '09' THEN cal.duration_call ELSE 0 END) AS out_duration_call_00_09 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '00' AND LEFT(cal.call_start_time, 2) < '09' THEN cal.duration_call ELSE 0 END) AS in_duration_call_00_09 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '09' AND LEFT(cal.call_start_time, 2) < '10' THEN cal.duration_call ELSE 0 END) AS out_duration_call_09_10 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '09' AND LEFT(cal.call_start_time, 2) < '10' THEN cal.duration_call ELSE 0 END) AS in_duration_call_09_10 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '10' AND LEFT(cal.call_start_time, 2) < '11' THEN cal.duration_call ELSE 0 END) AS out_duration_call_10_11 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '10' AND LEFT(cal.call_start_time, 2) < '11' THEN cal.duration_call ELSE 0 END) AS in_duration_call_10_11 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '11' AND LEFT(cal.call_start_time, 2) < '12' THEN cal.duration_call ELSE 0 END) AS out_duration_call_11_12 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '11' AND LEFT(cal.call_start_time, 2) < '12' THEN cal.duration_call ELSE 0 END) AS in_duration_call_11_12 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '12' AND LEFT(cal.call_start_time, 2) < '13' THEN cal.duration_call ELSE 0 END) AS out_duration_call_12_13 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '12' AND LEFT(cal.call_start_time, 2) < '13' THEN cal.duration_call ELSE 0 END) AS in_duration_call_12_13 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '13' AND LEFT(cal.call_start_time, 2) < '14' THEN cal.duration_call ELSE 0 END) AS out_duration_call_13_14 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '13' AND LEFT(cal.call_start_time, 2) < '14' THEN cal.duration_call ELSE 0 END) AS in_duration_call_13_14 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '14' AND LEFT(cal.call_start_time, 2) < '15' THEN cal.duration_call ELSE 0 END) AS out_duration_call_14_15 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '14' AND LEFT(cal.call_start_time, 2) < '15' THEN cal.duration_call ELSE 0 END) AS in_duration_call_14_15 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '15' AND LEFT(cal.call_start_time, 2) < '16' THEN cal.duration_call ELSE 0 END) AS out_duration_call_15_16 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '15' AND LEFT(cal.call_start_time, 2) < '16' THEN cal.duration_call ELSE 0 END) AS in_duration_call_15_16 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '16' AND LEFT(cal.call_start_time, 2) < '17' THEN cal.duration_call ELSE 0 END) AS out_duration_call_16_17 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '16' AND LEFT(cal.call_start_time, 2) < '17' THEN cal.duration_call ELSE 0 END) AS in_duration_call_16_17 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '17' AND LEFT(cal.call_start_time, 2) < '18' THEN cal.duration_call ELSE 0 END) AS out_duration_call_17_18 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '17' AND LEFT(cal.call_start_time, 2) < '18' THEN cal.duration_call ELSE 0 END) AS in_duration_call_17_18 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '18' AND LEFT(cal.call_start_time, 2) < '19' THEN cal.duration_call ELSE 0 END) AS out_duration_call_18_19 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '18' AND LEFT(cal.call_start_time, 2) < '19' THEN cal.duration_call ELSE 0 END) AS in_duration_call_18_19 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '19' AND LEFT(cal.call_start_time, 2) < '20' THEN cal.duration_call ELSE 0 END) AS out_duration_call_19_20 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '19' AND LEFT(cal.call_start_time, 2) < '20' THEN cal.duration_call ELSE 0 END) AS in_duration_call_19_20 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '20' AND LEFT(cal.call_start_time, 2) < '21' THEN cal.duration_call ELSE 0 END) AS out_duration_call_20_21 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '20' AND LEFT(cal.call_start_time, 2) < '21' THEN cal.duration_call ELSE 0 END) AS in_duration_call_20_21 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '21' AND LEFT(cal.call_start_time, 2) < '22' THEN cal.duration_call ELSE 0 END) AS out_duration_call_21_22 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '21' AND LEFT(cal.call_start_time, 2) < '22' THEN cal.duration_call ELSE 0 END) AS in_duration_call_21_22 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '22' AND LEFT(cal.call_start_time, 2) < '23' THEN cal.duration_call ELSE 0 END) AS out_duration_call_22_23 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '22' AND LEFT(cal.call_start_time, 2) < '23' THEN cal.duration_call ELSE 0 END) AS in_duration_call_22_23 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '23' AND LEFT(cal.call_start_time, 2) < '24' THEN cal.duration_call ELSE 0 END) AS out_duration_call_23_24 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '23' AND LEFT(cal.call_start_time, 2) < '24' THEN cal.duration_call ELSE 0 END) AS in_duration_call_23_24 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '00' AND LEFT(cal.call_start_time, 2) < '09' THEN 1 ELSE 0 END) AS out_count_call_00_09 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '00' AND LEFT(cal.call_start_time, 2) < '09' THEN 1 ELSE 0 END) AS in_count_call_00_09 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '09' AND LEFT(cal.call_start_time, 2) < '10' THEN 1 ELSE 0 END) AS out_count_call_09_10 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '09' AND LEFT(cal.call_start_time, 2) < '10' THEN 1 ELSE 0 END) AS in_count_call_09_10 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '10' AND LEFT(cal.call_start_time, 2) < '11' THEN 1 ELSE 0 END) AS out_count_call_10_11 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '10' AND LEFT(cal.call_start_time, 2) < '11' THEN 1 ELSE 0 END) AS in_count_call_10_11 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '11' AND LEFT(cal.call_start_time, 2) < '12' THEN 1 ELSE 0 END) AS out_count_call_11_12 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '11' AND LEFT(cal.call_start_time, 2) < '12' THEN 1 ELSE 0 END) AS in_count_call_11_12 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '12' AND LEFT(cal.call_start_time, 2) < '13' THEN 1 ELSE 0 END) AS out_count_call_12_13 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '12' AND LEFT(cal.call_start_time, 2) < '13' THEN 1 ELSE 0 END) AS in_count_call_12_13 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '13' AND LEFT(cal.call_start_time, 2) < '14' THEN 1 ELSE 0 END) AS out_count_call_13_14 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '13' AND LEFT(cal.call_start_time, 2) < '14' THEN 1 ELSE 0 END) AS in_count_call_13_14 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '14' AND LEFT(cal.call_start_time, 2) < '15' THEN 1 ELSE 0 END) AS out_count_call_14_15 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '14' AND LEFT(cal.call_start_time, 2) < '15' THEN 1 ELSE 0 END) AS in_count_call_14_15 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '15' AND LEFT(cal.call_start_time, 2) < '16' THEN 1 ELSE 0 END) AS out_count_call_15_16 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '15' AND LEFT(cal.call_start_time, 2) < '16' THEN 1 ELSE 0 END) AS in_count_call_15_16 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '16' AND LEFT(cal.call_start_time, 2) < '17' THEN 1 ELSE 0 END) AS out_count_call_16_17 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '16' AND LEFT(cal.call_start_time, 2) < '17' THEN 1 ELSE 0 END) AS in_count_call_16_17 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '17' AND LEFT(cal.call_start_time, 2) < '18' THEN 1 ELSE 0 END) AS out_count_call_17_18 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '17' AND LEFT(cal.call_start_time, 2) < '18' THEN 1 ELSE 0 END) AS in_count_call_17_18 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '18' AND LEFT(cal.call_start_time, 2) < '19' THEN 1 ELSE 0 END) AS out_count_call_18_19 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '18' AND LEFT(cal.call_start_time, 2) < '19' THEN 1 ELSE 0 END) AS in_count_call_18_19 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '19' AND LEFT(cal.call_start_time, 2) < '20' THEN 1 ELSE 0 END) AS out_count_call_19_20 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '19' AND LEFT(cal.call_start_time, 2) < '20' THEN 1 ELSE 0 END) AS in_count_call_19_20 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '20' AND LEFT(cal.call_start_time, 2) < '21' THEN 1 ELSE 0 END) AS out_count_call_20_21 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '20' AND LEFT(cal.call_start_time, 2) < '21' THEN 1 ELSE 0 END) AS in_count_call_20_21 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '21' AND LEFT(cal.call_start_time, 2) < '22' THEN 1 ELSE 0 END) AS out_count_call_21_22 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '21' AND LEFT(cal.call_start_time, 2) < '22' THEN 1 ELSE 0 END) AS in_count_call_21_22 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '22' AND LEFT(cal.call_start_time, 2) < '23' THEN 1 ELSE 0 END) AS out_count_call_22_23 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '22' AND LEFT(cal.call_start_time, 2) < '23' THEN 1 ELSE 0 END) AS in_count_call_22_23 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '23' AND LEFT(cal.call_start_time, 2) < '24' THEN 1 ELSE 0 END) AS out_count_call_23_24 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '23' AND LEFT(cal.call_start_time, 2) < '24' THEN 1 ELSE 0 END) AS in_count_call_23_24
+			]]>
+			FROM	orkuser usr 
+			LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id 
+			LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id  
+			<isEmpty property="onlyRealUser">
+			LEFT OUTER JOIN orkcall cal ON cal.user_id = login.zirecxid 
+			AND cal.call_start_date = #strToday#
+			, orkgroup grp 
+			WHERE grp.id = gtu.groupId 
+			AND grp.securityGroup = 0 
+			</isEmpty>
+			<isNotEmpty property="onlyRealUser">
+			, orkcall cal 
+			, orkgroup grp 
+			WHERE grp.id = gtu.groupId 
+			AND cal.user_id = login.zirecxid AND cal.call_start_date = #strToday#
+			AND grp.securityGroup = 0 
+			</isNotEmpty>
+<!-- 권한관련 시작 (orksegment 조회시) -->
+			<isNotEqual property="sessionZirecxId" compareValue="admin">
+				<isEqual property="accessPolicy" compareValue="group">
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="groupUp">    <!-- groupUp 권한 이면 -->
+						AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="own">
+					AND login.zirecxId = #sessionZirecxId#
+				</isEqual>
+				
+				<isNotEmpty property="schGroupId">
+					<isEqual property="accessPolicy" compareValue="all">
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+				</isNotEmpty>
+			</isNotEqual>
+			<isEqual property="sessionZirecxId" compareValue="admin">
+				<isNotEmpty property="schGroupId">
+			AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			#arrGroupSeq[]# 
+				    </iterate>
+				</isNotEmpty>
+			</isEqual>
+	<!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+			<isEmpty property="includeRetired">
+			AND usr.deleted = 0
+			</isEmpty>
+<!-- 권한관련 끝 (orksegment 조회시) -->
+			GROUP BY usr.id, dbo.usp_get_group_path(gtu.groupId), usr.firstName, login.zirecxId, usr.phonenumber
+		</isEqual> 
+		<isEqual property="chkSql1" compareValue="1">
+		<isEqual property="chkSql2" compareValue="1">
+		) t1 
+		GROUP BY id, groupId, firstName, zirecxId, phonenumber 
+		
+		</isEqual>
+		</isEqual>
+		) a
+		ORDER BY $orderKey$ $orderType$
+	</select>
+	
+	<select id="linkageReportManageDAO.selectLinkageHourlyReportGroupList" parameterClass="reportHourlySearchVO" resultClass="egovMap">
+	<!-- 기존자료 & 당일자료 검색시 -->
+	SELECT * 
+		, out_duration_call_00_09  +  
+		in_duration_call_00_09   +  
+		out_duration_call_09_10  +  
+		in_duration_call_09_10   +  
+		out_duration_call_10_11  +  
+		in_duration_call_10_11   +  
+		out_duration_call_11_12  +  
+		in_duration_call_11_12   +  
+		out_duration_call_12_13  +  
+		in_duration_call_12_13   +  
+		out_duration_call_13_14  +  
+		in_duration_call_13_14   +  
+		out_duration_call_14_15  +  
+		in_duration_call_14_15   +  
+		out_duration_call_15_16  +  
+		in_duration_call_15_16   +  
+		out_duration_call_16_17  +  
+		in_duration_call_16_17   +  
+		out_duration_call_17_18  +  
+		in_duration_call_17_18   +  
+		out_duration_call_18_19  +  
+		in_duration_call_18_19   +  
+		out_duration_call_19_20  +  
+		in_duration_call_19_20   +  
+		out_duration_call_20_21  +  
+		in_duration_call_20_21   +  
+		out_duration_call_21_22  +  
+		in_duration_call_21_22   +  
+		out_duration_call_22_23  +  
+		in_duration_call_22_23   +  
+		out_duration_call_23_24  +  
+		in_duration_call_23_24  AS sum_dur
+		, 
+		
+		out_duration_call_00_09  +  
+		out_duration_call_09_10  +  
+		out_duration_call_10_11  +  
+		out_duration_call_11_12  +  
+		out_duration_call_12_13  +  
+		out_duration_call_13_14  +  
+		out_duration_call_14_15  +  
+		out_duration_call_15_16  +  
+		out_duration_call_16_17  +  
+		out_duration_call_17_18  +  
+		out_duration_call_18_19  +  
+		out_duration_call_19_20  +  
+		out_duration_call_20_21  +  
+		out_duration_call_21_22  +  
+		out_duration_call_22_23  +  
+		out_duration_call_23_24 AS sum_dur_out
+		,
+		in_duration_call_00_09  +  
+		in_duration_call_09_10  +  
+		in_duration_call_10_11  +  
+		in_duration_call_11_12  +  
+		in_duration_call_12_13  +  
+		in_duration_call_13_14  +  
+		in_duration_call_14_15  +  
+		in_duration_call_15_16  +  
+		in_duration_call_16_17  +  
+		in_duration_call_17_18  +  
+		in_duration_call_18_19  +  
+		in_duration_call_19_20  +  
+		in_duration_call_20_21  +  
+		in_duration_call_21_22  +  
+		in_duration_call_22_23  +  
+		in_duration_call_23_24 AS sum_dur_in
+		   
+		,
+		out_count_call_00_09  +
+		in_count_call_00_09   +
+		out_count_call_09_10  +
+		in_count_call_09_10   +
+		out_count_call_10_11  +
+		in_count_call_10_11   +
+		out_count_call_11_12  +
+		in_count_call_11_12   +
+		out_count_call_12_13  +
+		in_count_call_12_13   +
+		out_count_call_13_14  +
+		in_count_call_13_14   +
+		out_count_call_14_15  +
+		in_count_call_14_15   +
+		out_count_call_15_16  +
+		in_count_call_15_16   +
+		out_count_call_16_17  +
+		in_count_call_16_17   +
+		out_count_call_17_18  +
+		in_count_call_17_18   +
+		out_count_call_18_19  +
+		in_count_call_18_19   +
+		out_count_call_19_20  +
+		in_count_call_19_20   +
+		out_count_call_20_21  +
+		in_count_call_20_21   +
+		out_count_call_21_22  +
+		in_count_call_21_22   +
+		out_count_call_22_23  +
+		in_count_call_22_23   +
+		out_count_call_23_24  +
+		in_count_call_23_24   AS sum_cnt
+		, 
+		
+		out_count_call_00_09  +
+		out_count_call_09_10  +
+		out_count_call_10_11  +
+		out_count_call_11_12  +
+		out_count_call_12_13  +
+		out_count_call_13_14  +
+		out_count_call_14_15  +
+		out_count_call_15_16  +
+		out_count_call_16_17  +
+		out_count_call_17_18  +
+		out_count_call_18_19  +
+		out_count_call_19_20  +
+		out_count_call_20_21  +
+		out_count_call_21_22  +
+		out_count_call_22_23  +
+		out_count_call_23_24   AS sum_cnt_out
+		,
+		
+		in_count_call_00_09  +
+		in_count_call_09_10  +
+		in_count_call_10_11  +
+		in_count_call_11_12  +
+		in_count_call_12_13  +
+		in_count_call_13_14  +
+		in_count_call_14_15  +
+		in_count_call_15_16  +
+		in_count_call_16_17  +
+		in_count_call_17_18  +
+		in_count_call_18_19  +
+		in_count_call_19_20  +
+		in_count_call_20_21  +
+		in_count_call_21_22  +
+		in_count_call_22_23  +
+		in_count_call_23_24   AS sum_cnt_in
+		
+		from (
+		<isEqual property="chkSql1" compareValue="1">
+		<isEqual property="chkSql2" compareValue="1">
+	<![CDATA[
+		SELECT	groupId 
+			, SUM(out_duration_call_00_09) AS out_duration_call_00_09, SUM(in_duration_call_00_09) AS in_duration_call_00_09 
+			, SUM(out_duration_call_09_10) AS out_duration_call_09_10, SUM(in_duration_call_09_10) AS in_duration_call_09_10 
+			, SUM(out_duration_call_10_11) AS out_duration_call_10_11, SUM(in_duration_call_10_11) AS in_duration_call_10_11 
+			, SUM(out_duration_call_11_12) AS out_duration_call_11_12, SUM(in_duration_call_11_12) AS in_duration_call_11_12
+			, SUM(out_duration_call_12_13) AS out_duration_call_12_13, SUM(in_duration_call_12_13) AS in_duration_call_12_13
+			, SUM(out_duration_call_13_14) AS out_duration_call_13_14, SUM(in_duration_call_13_14) AS in_duration_call_13_14
+			, SUM(out_duration_call_14_15) AS out_duration_call_14_15, SUM(in_duration_call_14_15) AS in_duration_call_14_15
+			, SUM(out_duration_call_15_16) AS out_duration_call_15_16, SUM(in_duration_call_15_16) AS in_duration_call_15_16
+			, SUM(out_duration_call_16_17) AS out_duration_call_16_17, SUM(in_duration_call_16_17) AS in_duration_call_16_17
+			, SUM(out_duration_call_17_18) AS out_duration_call_17_18, SUM(in_duration_call_17_18) AS in_duration_call_17_18
+			, SUM(out_duration_call_18_19) AS out_duration_call_18_19, SUM(in_duration_call_18_19) AS in_duration_call_18_19
+			, SUM(out_duration_call_19_20) AS out_duration_call_19_20, SUM(in_duration_call_19_20) AS in_duration_call_19_20
+			, SUM(out_duration_call_20_21) AS out_duration_call_20_21, SUM(in_duration_call_20_21) AS in_duration_call_20_21
+			, SUM(out_duration_call_21_22) AS out_duration_call_21_22, SUM(in_duration_call_21_22) AS in_duration_call_21_22
+			, SUM(out_duration_call_22_23) AS out_duration_call_22_23, SUM(in_duration_call_22_23) AS in_duration_call_22_23
+			, SUM(out_duration_call_23_24) AS out_duration_call_23_24, SUM(in_duration_call_23_24) AS in_duration_call_23_24
+			, SUM(out_count_call_00_09) AS out_count_call_00_09, SUM(in_count_call_00_09) AS in_count_call_00_09
+			, SUM(out_count_call_09_10) AS out_count_call_09_10, SUM(in_count_call_09_10) AS in_count_call_09_10
+			, SUM(out_count_call_10_11) AS out_count_call_10_11, SUM(in_count_call_10_11) AS in_count_call_10_11
+			, SUM(out_count_call_11_12) AS out_count_call_11_12, SUM(in_count_call_11_12) AS in_count_call_11_12
+			, SUM(out_count_call_12_13) AS out_count_call_12_13, SUM(in_count_call_12_13) AS in_count_call_12_13
+			, SUM(out_count_call_13_14) AS out_count_call_13_14, SUM(in_count_call_13_14) AS in_count_call_13_14
+			, SUM(out_count_call_14_15) AS out_count_call_14_15, SUM(in_count_call_14_15) AS in_count_call_14_15
+			, SUM(out_count_call_15_16) AS out_count_call_15_16, SUM(in_count_call_15_16) AS in_count_call_15_16
+			, SUM(out_count_call_16_17) AS out_count_call_16_17, SUM(in_count_call_16_17) AS in_count_call_16_17
+			, SUM(out_count_call_17_18) AS out_count_call_17_18, SUM(in_count_call_17_18) AS in_count_call_17_18
+			, SUM(out_count_call_18_19) AS out_count_call_18_19, SUM(in_count_call_18_19) AS in_count_call_18_19
+			, SUM(out_count_call_19_20) AS out_count_call_19_20, SUM(in_count_call_19_20) AS in_count_call_19_20
+			, SUM(out_count_call_20_21) AS out_count_call_20_21, SUM(in_count_call_20_21) AS in_count_call_20_21
+			, SUM(out_count_call_21_22) AS out_count_call_21_22, SUM(in_count_call_21_22) AS in_count_call_21_22
+			, SUM(out_count_call_22_23) AS out_count_call_22_23, SUM(in_count_call_22_23) AS in_count_call_22_23
+			, SUM(out_count_call_23_24) AS out_count_call_23_24, SUM(in_count_call_23_24) AS in_count_call_23_24 
+		]]>
+		FROM    ( 
+		</isEqual>
+		</isEqual>
+		<!-- 기존자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+		<![CDATA[
+			SELECT  dbo.usp_get_group_path(gtu.groupId) AS groupId 
+				, (SUM(ISNULL(rpt.out_duration_call_00_01, 0)) + SUM(ISNULL(rpt.out_duration_call_01_02, 0)) + 
+					SUM(ISNULL(rpt.out_duration_call_02_03, 0)) + SUM(ISNULL(rpt.out_duration_call_03_04, 0)) + 
+					SUM(ISNULL(rpt.out_duration_call_04_05, 0)) + SUM(ISNULL(rpt.out_duration_call_05_06, 0)) + 
+					SUM(ISNULL(rpt.out_duration_call_06_07, 0)) + SUM(ISNULL(rpt.out_duration_call_07_08, 0)) + 
+					SUM(ISNULL(rpt.out_duration_call_08_09, 0))) as out_duration_call_00_09 
+				, (SUM(ISNULL(rpt.in_duration_call_00_01, 0)) + SUM(ISNULL(rpt.in_duration_call_01_02, 0)) + 
+					SUM(ISNULL(rpt.in_duration_call_02_03, 0)) + SUM(ISNULL(rpt.in_duration_call_03_04, 0)) + 
+					SUM(ISNULL(rpt.in_duration_call_04_05, 0)) + SUM(ISNULL(rpt.in_duration_call_05_06, 0)) + 
+					SUM(ISNULL(rpt.in_duration_call_06_07, 0)) + SUM(ISNULL(rpt.in_duration_call_07_08, 0)) + 
+					SUM(ISNULL(rpt.in_duration_call_08_09, 0))) as in_duration_call_00_09 
+				, SUM(ISNULL(rpt.out_duration_call_09_10, 0)) AS out_duration_call_09_10 
+				, SUM(ISNULL(rpt.in_duration_call_09_10, 0)) AS in_duration_call_09_10 
+				, SUM(ISNULL(rpt.out_duration_call_10_11, 0)) AS out_duration_call_10_11 
+				, SUM(ISNULL(rpt.in_duration_call_10_11, 0)) AS in_duration_call_10_11 
+				, SUM(ISNULL(rpt.out_duration_call_11_12, 0)) AS out_duration_call_11_12 
+				, SUM(ISNULL(rpt.in_duration_call_11_12, 0)) AS in_duration_call_11_12 
+				, SUM(ISNULL(rpt.out_duration_call_12_13, 0)) AS out_duration_call_12_13 
+				, SUM(ISNULL(rpt.in_duration_call_12_13, 0)) AS in_duration_call_12_13 
+				, SUM(ISNULL(rpt.out_duration_call_13_14, 0)) AS out_duration_call_13_14 
+				, SUM(ISNULL(rpt.in_duration_call_13_14, 0)) AS in_duration_call_13_14 
+				, SUM(ISNULL(rpt.out_duration_call_14_15, 0)) AS out_duration_call_14_15 
+				, SUM(ISNULL(rpt.in_duration_call_14_15, 0)) AS in_duration_call_14_15 
+				, SUM(ISNULL(rpt.out_duration_call_15_16, 0)) AS out_duration_call_15_16 
+				, SUM(ISNULL(rpt.in_duration_call_15_16, 0)) AS in_duration_call_15_16 
+				, SUM(ISNULL(rpt.out_duration_call_16_17, 0)) AS out_duration_call_16_17 
+				, SUM(ISNULL(rpt.in_duration_call_16_17, 0)) AS in_duration_call_16_17
+				, SUM(ISNULL(rpt.out_duration_call_17_18, 0)) AS out_duration_call_17_18 
+				, SUM(ISNULL(rpt.in_duration_call_17_18, 0)) AS in_duration_call_17_18 
+				, SUM(ISNULL(rpt.out_duration_call_18_19, 0)) AS out_duration_call_18_19 
+				, SUM(ISNULL(rpt.in_duration_call_18_19, 0)) AS in_duration_call_18_19 
+				, SUM(ISNULL(rpt.out_duration_call_19_20, 0)) AS out_duration_call_19_20 
+				, SUM(ISNULL(rpt.in_duration_call_19_20, 0)) AS in_duration_call_19_20 
+				, SUM(ISNULL(rpt.out_duration_call_20_21, 0)) AS out_duration_call_20_21 
+				, SUM(ISNULL(rpt.in_duration_call_20_21, 0)) AS in_duration_call_20_21 
+				, SUM(ISNULL(rpt.out_duration_call_21_22, 0)) AS out_duration_call_21_22 
+				, SUM(ISNULL(rpt.in_duration_call_21_22, 0)) AS in_duration_call_21_22 
+				, SUM(ISNULL(rpt.out_duration_call_22_23, 0)) AS out_duration_call_22_23 
+				, SUM(ISNULL(rpt.in_duration_call_22_23, 0)) AS in_duration_call_22_23 
+				, SUM(ISNULL(rpt.out_duration_call_23_24, 0)) AS out_duration_call_23_24 
+				, SUM(ISNULL(rpt.in_duration_call_23_24, 0)) AS in_duration_call_23_24 
+				, (SUM(ISNULL(rpt.out_count_call_00_01, 0)) + SUM(ISNULL(rpt.out_count_call_01_02, 0)) + 
+					SUM(ISNULL(rpt.out_count_call_02_03, 0)) + SUM(ISNULL(rpt.out_count_call_03_04, 0)) + 
+					SUM(ISNULL(rpt.out_count_call_04_05, 0)) + SUM(ISNULL(rpt.out_count_call_05_06, 0)) + 
+					SUM(ISNULL(rpt.out_count_call_06_07, 0)) + SUM(ISNULL(rpt.out_count_call_07_08, 0)) + 
+					SUM(ISNULL(rpt.out_count_call_08_09, 0))) as out_count_call_00_09 
+				, (SUM(ISNULL(rpt.in_count_call_00_01, 0)) + SUM(ISNULL(rpt.in_count_call_01_02, 0)) + 
+					SUM(ISNULL(rpt.in_count_call_02_03, 0)) + SUM(ISNULL(rpt.in_count_call_03_04, 0)) + 
+					SUM(ISNULL(rpt.in_count_call_04_05, 0)) + SUM(ISNULL(rpt.in_count_call_05_06, 0)) + 
+					SUM(ISNULL(rpt.in_count_call_06_07, 0)) + SUM(ISNULL(rpt.in_count_call_07_08, 0)) + 
+					SUM(ISNULL(rpt.in_count_call_08_09, 0))) as in_count_call_00_09 
+				, SUM(ISNULL(rpt.out_count_call_09_10, 0)) AS out_count_call_09_10 
+				, SUM(ISNULL(rpt.in_count_call_09_10, 0)) AS in_count_call_09_10 
+				, SUM(ISNULL(rpt.out_count_call_10_11, 0)) AS out_count_call_10_11 
+				, SUM(ISNULL(rpt.in_count_call_10_11, 0)) AS in_count_call_10_11 
+				, SUM(ISNULL(rpt.out_count_call_11_12, 0)) AS out_count_call_11_12 
+				, SUM(ISNULL(rpt.in_count_call_11_12, 0)) AS in_count_call_11_12 
+				, SUM(ISNULL(rpt.out_count_call_12_13, 0)) AS out_count_call_12_13 
+				, SUM(ISNULL(rpt.in_count_call_12_13, 0)) AS in_count_call_12_13 
+				, SUM(ISNULL(rpt.out_count_call_13_14, 0)) AS out_count_call_13_14 
+				, SUM(ISNULL(rpt.in_count_call_13_14, 0)) AS in_count_call_13_14 
+				, SUM(ISNULL(rpt.out_count_call_14_15, 0)) AS out_count_call_14_15 
+				, SUM(ISNULL(rpt.in_count_call_14_15, 0)) AS in_count_call_14_15 
+				, SUM(ISNULL(rpt.out_count_call_15_16, 0)) AS out_count_call_15_16 
+				, SUM(ISNULL(rpt.in_count_call_15_16, 0)) AS in_count_call_15_16 
+				, SUM(ISNULL(rpt.out_count_call_16_17, 0)) AS out_count_call_16_17 
+				, SUM(ISNULL(rpt.in_count_call_16_17, 0)) AS in_count_call_16_17 
+				, SUM(ISNULL(rpt.out_count_call_17_18, 0)) AS out_count_call_17_18 
+				, SUM(ISNULL(rpt.in_count_call_17_18, 0)) AS in_count_call_17_18 
+				, SUM(ISNULL(rpt.out_count_call_18_19, 0)) AS out_count_call_18_19 
+				, SUM(ISNULL(rpt.in_count_call_18_19, 0)) AS in_count_call_18_19 
+				, SUM(ISNULL(rpt.out_count_call_19_20, 0)) AS out_count_call_19_20 
+				, SUM(ISNULL(rpt.in_count_call_19_20, 0)) AS in_count_call_19_20 
+				, SUM(ISNULL(rpt.out_count_call_20_21, 0)) AS out_count_call_20_21 
+				, SUM(ISNULL(rpt.in_count_call_20_21, 0)) AS in_count_call_20_21 
+				, SUM(ISNULL(rpt.out_count_call_21_22, 0)) AS out_count_call_21_22 
+				, SUM(ISNULL(rpt.in_count_call_21_22, 0)) AS in_count_call_21_22 
+				, SUM(ISNULL(rpt.out_count_call_22_23, 0)) AS out_count_call_22_23 
+				, SUM(ISNULL(rpt.in_count_call_22_23, 0)) AS in_count_call_22_23 
+				, SUM(ISNULL(rpt.out_count_call_23_24, 0)) AS out_count_call_23_24 
+				, SUM(ISNULL(rpt.in_count_call_23_24, 0)) AS in_count_call_23_24 
+			]]>
+			FROM	orkuser usr 
+			LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id 
+			LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id 
+			<isEmpty property="onlyRealUser">
+			LEFT OUTER JOIN orkreportdaily rpt ON rpt.zirecxId = login.zirecxId 
+			AND rpt.call_date BETWEEN #strStartDate# AND #strEndDate#
+			, orkgroup grp 
+			WHERE grp.id = gtu.groupId 
+			AND grp.securityGroup = 0 
+			</isEmpty>
+			<isNotEmpty property="onlyRealUser">
+			, orkreportdaily rpt 
+			, orkgroup grp 
+			WHERE grp.id = gtu.groupId 
+			AND rpt.zirecxId = login.zirecxId 
+			AND rpt.call_date BETWEEN #strStartDate# AND #strEndDate#
+			AND grp.securityGroup = 0 
+			</isNotEmpty>
+<!-- 권한관련 시작 (orksegment 조회시) -->
+			<isNotEqual property="sessionZirecxId" compareValue="admin">
+				<isEqual property="accessPolicy" compareValue="group">
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="groupUp">    <!-- groupUp 권한 이면 -->
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="own">
+					AND login.zirecxId = #sessionZirecxId#
+				</isEqual>
+				
+				<isNotEmpty property="schGroupId">
+					<isEqual property="accessPolicy" compareValue="all">
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+				</isNotEmpty>
+			</isNotEqual>
+			<isEqual property="sessionZirecxId" compareValue="admin">
+				<isNotEmpty property="schGroupId">
+			AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			#arrGroupSeq[]# 
+				    </iterate>
+				</isNotEmpty>
+			</isEqual>
+	<!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+			<isEmpty property="includeRetired">
+			AND usr.deleted = 0
+			</isEmpty>
+<!-- 권한관련 끝 (orksegment 조회시) -->
+			GROUP BY dbo.usp_get_group_path(gtu.groupId)
+		</isEqual>
+		<!-- 기존자료 & 당일자료 검색시 -->
+		<isEqual property="chkSql1" compareValue="1">
+		<isEqual property="chkSql2" compareValue="1">
+			UNION ALL 
+		</isEqual>
+		</isEqual>
+		<!-- 당일자료 검색시 -->
+		<isEqual property="chkSql2" compareValue="1">
+		<![CDATA[
+			SELECT	dbo.usp_get_group_path(gtu.groupId) AS groupId
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '00' AND LEFT(cal.call_start_time, 2) < '09' THEN cal.duration_call ELSE 0 END) AS out_duration_call_00_09 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '00' AND LEFT(cal.call_start_time, 2) < '09' THEN cal.duration_call ELSE 0 END) AS in_duration_call_00_09 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '09' AND LEFT(cal.call_start_time, 2) < '10' THEN cal.duration_call ELSE 0 END) AS out_duration_call_09_10 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '09' AND LEFT(cal.call_start_time, 2) < '10' THEN cal.duration_call ELSE 0 END) AS in_duration_call_09_10 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '10' AND LEFT(cal.call_start_time, 2) < '11' THEN cal.duration_call ELSE 0 END) AS out_duration_call_10_11 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '10' AND LEFT(cal.call_start_time, 2) < '11' THEN cal.duration_call ELSE 0 END) AS in_duration_call_10_11 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '11' AND LEFT(cal.call_start_time, 2) < '12' THEN cal.duration_call ELSE 0 END) AS out_duration_call_11_12 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '11' AND LEFT(cal.call_start_time, 2) < '12' THEN cal.duration_call ELSE 0 END) AS in_duration_call_11_12 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '12' AND LEFT(cal.call_start_time, 2) < '13' THEN cal.duration_call ELSE 0 END) AS out_duration_call_12_13 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '12' AND LEFT(cal.call_start_time, 2) < '13' THEN cal.duration_call ELSE 0 END) AS in_duration_call_12_13 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '13' AND LEFT(cal.call_start_time, 2) < '14' THEN cal.duration_call ELSE 0 END) AS out_duration_call_13_14 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '13' AND LEFT(cal.call_start_time, 2) < '14' THEN cal.duration_call ELSE 0 END) AS in_duration_call_13_14 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '14' AND LEFT(cal.call_start_time, 2) < '15' THEN cal.duration_call ELSE 0 END) AS out_duration_call_14_15 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '14' AND LEFT(cal.call_start_time, 2) < '15' THEN cal.duration_call ELSE 0 END) AS in_duration_call_14_15 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '15' AND LEFT(cal.call_start_time, 2) < '16' THEN cal.duration_call ELSE 0 END) AS out_duration_call_15_16 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '15' AND LEFT(cal.call_start_time, 2) < '16' THEN cal.duration_call ELSE 0 END) AS in_duration_call_15_16 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '16' AND LEFT(cal.call_start_time, 2) < '17' THEN cal.duration_call ELSE 0 END) AS out_duration_call_16_17 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '16' AND LEFT(cal.call_start_time, 2) < '17' THEN cal.duration_call ELSE 0 END) AS in_duration_call_16_17 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '17' AND LEFT(cal.call_start_time, 2) < '18' THEN cal.duration_call ELSE 0 END) AS out_duration_call_17_18 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '17' AND LEFT(cal.call_start_time, 2) < '18' THEN cal.duration_call ELSE 0 END) AS in_duration_call_17_18 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '18' AND LEFT(cal.call_start_time, 2) < '19' THEN cal.duration_call ELSE 0 END) AS out_duration_call_18_19 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '18' AND LEFT(cal.call_start_time, 2) < '19' THEN cal.duration_call ELSE 0 END) AS in_duration_call_18_19 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '19' AND LEFT(cal.call_start_time, 2) < '20' THEN cal.duration_call ELSE 0 END) AS out_duration_call_19_20 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '19' AND LEFT(cal.call_start_time, 2) < '20' THEN cal.duration_call ELSE 0 END) AS in_duration_call_19_20 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '20' AND LEFT(cal.call_start_time, 2) < '21' THEN cal.duration_call ELSE 0 END) AS out_duration_call_20_21 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '20' AND LEFT(cal.call_start_time, 2) < '21' THEN cal.duration_call ELSE 0 END) AS in_duration_call_20_21 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '21' AND LEFT(cal.call_start_time, 2) < '22' THEN cal.duration_call ELSE 0 END) AS out_duration_call_21_22 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '21' AND LEFT(cal.call_start_time, 2) < '22' THEN cal.duration_call ELSE 0 END) AS in_duration_call_21_22 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '22' AND LEFT(cal.call_start_time, 2) < '23' THEN cal.duration_call ELSE 0 END) AS out_duration_call_22_23 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '22' AND LEFT(cal.call_start_time, 2) < '23' THEN cal.duration_call ELSE 0 END) AS in_duration_call_22_23 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '23' AND LEFT(cal.call_start_time, 2) < '24' THEN cal.duration_call ELSE 0 END) AS out_duration_call_23_24 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '23' AND LEFT(cal.call_start_time, 2) < '24' THEN cal.duration_call ELSE 0 END) AS in_duration_call_23_24 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '00' AND LEFT(cal.call_start_time, 2) < '09' THEN 1 ELSE 0 END) AS out_count_call_00_09 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '00' AND LEFT(cal.call_start_time, 2) < '09' THEN 1 ELSE 0 END) AS in_count_call_00_09 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '09' AND LEFT(cal.call_start_time, 2) < '10' THEN 1 ELSE 0 END) AS out_count_call_09_10 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '09' AND LEFT(cal.call_start_time, 2) < '10' THEN 1 ELSE 0 END) AS in_count_call_09_10 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '10' AND LEFT(cal.call_start_time, 2) < '11' THEN 1 ELSE 0 END) AS out_count_call_10_11 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '10' AND LEFT(cal.call_start_time, 2) < '11' THEN 1 ELSE 0 END) AS in_count_call_10_11 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '11' AND LEFT(cal.call_start_time, 2) < '12' THEN 1 ELSE 0 END) AS out_count_call_11_12 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '11' AND LEFT(cal.call_start_time, 2) < '12' THEN 1 ELSE 0 END) AS in_count_call_11_12 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '12' AND LEFT(cal.call_start_time, 2) < '13' THEN 1 ELSE 0 END) AS out_count_call_12_13 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '12' AND LEFT(cal.call_start_time, 2) < '13' THEN 1 ELSE 0 END) AS in_count_call_12_13 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '13' AND LEFT(cal.call_start_time, 2) < '14' THEN 1 ELSE 0 END) AS out_count_call_13_14 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '13' AND LEFT(cal.call_start_time, 2) < '14' THEN 1 ELSE 0 END) AS in_count_call_13_14 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '14' AND LEFT(cal.call_start_time, 2) < '15' THEN 1 ELSE 0 END) AS out_count_call_14_15 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '14' AND LEFT(cal.call_start_time, 2) < '15' THEN 1 ELSE 0 END) AS in_count_call_14_15 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '15' AND LEFT(cal.call_start_time, 2) < '16' THEN 1 ELSE 0 END) AS out_count_call_15_16 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '15' AND LEFT(cal.call_start_time, 2) < '16' THEN 1 ELSE 0 END) AS in_count_call_15_16 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '16' AND LEFT(cal.call_start_time, 2) < '17' THEN 1 ELSE 0 END) AS out_count_call_16_17 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '16' AND LEFT(cal.call_start_time, 2) < '17' THEN 1 ELSE 0 END) AS in_count_call_16_17 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '17' AND LEFT(cal.call_start_time, 2) < '18' THEN 1 ELSE 0 END) AS out_count_call_17_18 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '17' AND LEFT(cal.call_start_time, 2) < '18' THEN 1 ELSE 0 END) AS in_count_call_17_18 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '18' AND LEFT(cal.call_start_time, 2) < '19' THEN 1 ELSE 0 END) AS out_count_call_18_19 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '18' AND LEFT(cal.call_start_time, 2) < '19' THEN 1 ELSE 0 END) AS in_count_call_18_19 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '19' AND LEFT(cal.call_start_time, 2) < '20' THEN 1 ELSE 0 END) AS out_count_call_19_20 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '19' AND LEFT(cal.call_start_time, 2) < '20' THEN 1 ELSE 0 END) AS in_count_call_19_20 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '20' AND LEFT(cal.call_start_time, 2) < '21' THEN 1 ELSE 0 END) AS out_count_call_20_21 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '20' AND LEFT(cal.call_start_time, 2) < '21' THEN 1 ELSE 0 END) AS in_count_call_20_21 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '21' AND LEFT(cal.call_start_time, 2) < '22' THEN 1 ELSE 0 END) AS out_count_call_21_22 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '21' AND LEFT(cal.call_start_time, 2) < '22' THEN 1 ELSE 0 END) AS in_count_call_21_22 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '22' AND LEFT(cal.call_start_time, 2) < '23' THEN 1 ELSE 0 END) AS out_count_call_22_23 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '22' AND LEFT(cal.call_start_time, 2) < '23' THEN 1 ELSE 0 END) AS in_count_call_22_23 
+				, SUM(CASE WHEN cal.inoutbound_code = 'O' AND LEFT(cal.call_start_time, 2) >= '23' AND LEFT(cal.call_start_time, 2) < '24' THEN 1 ELSE 0 END) AS out_count_call_23_24 
+				, SUM(CASE WHEN cal.inoutbound_code = 'I' AND LEFT(cal.call_start_time, 2) >= '23' AND LEFT(cal.call_start_time, 2) < '24' THEN 1 ELSE 0 END) AS in_count_call_23_24
+			]]>
+			FROM	orkuser usr 
+			LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id 
+			LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id  
+			<isEmpty property="onlyRealUser">
+			LEFT OUTER JOIN orkcall cal ON cal.user_id = login.zirecxid 
+			AND cal.call_start_date = #strToday#
+			, orkgroup grp 
+			WHERE grp.id = gtu.groupId 
+			AND grp.securityGroup = 0 
+			</isEmpty>
+			<isNotEmpty property="onlyRealUser">
+			, orkcall cal 
+			, orkgroup grp 
+			WHERE grp.id = gtu.groupId 
+			AND cal.user_id = login.zirecxid	AND cal.call_start_date = #strToday#
+			AND grp.securityGroup = 0 
+			</isNotEmpty>
+<!-- 권한관련 시작 (orksegment 조회시) -->
+			<isNotEqual property="sessionZirecxId" compareValue="admin">
+				<isEqual property="accessPolicy" compareValue="group">
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="groupUp">    <!-- groupUp 권한 이면 -->
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="own">
+					AND login.zirecxId = #sessionZirecxId#
+				</isEqual>
+				
+				<isNotEmpty property="schGroupId">
+					<isEqual property="accessPolicy" compareValue="all">
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+				</isNotEmpty>
+			</isNotEqual>
+			<isEqual property="sessionZirecxId" compareValue="admin">
+				<isNotEmpty property="schGroupId">
+			AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			#arrGroupSeq[]# 
+				    </iterate>
+				</isNotEmpty>
+			</isEqual>
+	<!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+			<isEmpty property="includeRetired">
+			AND usr.deleted = 0
+			</isEmpty>
+<!-- 권한관련 끝 (orksegment 조회시) -->
+			GROUP BY dbo.usp_get_group_path(gtu.groupId)
+		</isEqual> 
+		<isEqual property="chkSql1" compareValue="1">
+		<isEqual property="chkSql2" compareValue="1">
+		) t1 
+		GROUP BY groupId 
+		</isEqual>
+		</isEqual>
+		) a
+		ORDER BY $orderKey$ $orderType$
+	</select>
+	
+<!-- 시간대별 콜통계 끝 -->	
+
+
+
+
+<!-- 통화길이별 콜통계 시작 -->
+<select id="linkageReportManageDAO.selecLinkagetDurationReportUserList" parameterClass="reportSearchDurationVO" resultClass="egovMap">
+	<![CDATA[
+		SELECT usr.id USER_ID, dbo.usp_get_group_path(gtu.groupId) GROUP_PATH
+			, usr.firstName FIRST_NAME, login.zirecxId ZIRECX_ID, usr.phonenumber PHONENO
+			, c.campaign_unique_code CAMPAIGN_CODE, c.campaign_name CAMPAIGN_NAME
+			, SUM(CASE  WHEN c.INOUTBOUND_CODE = 'I' THEN 1 ELSE 0 End) T_I
+			, SUM(CASE  WHEN c.INOUTBOUND_CODE = 'O' THEN 1 ELSE 0 End) T_O
+			, SUM(CASE  WHEN c.duration_call < 60 AND c.INOUTBOUND_CODE = 'I' THEN 1 ELSE 0 End) LESS1_I
+			, SUM(CASE  WHEN c.duration_call < 60 AND c.INOUTBOUND_CODE = 'O' THEN 1 ELSE 0 End) LESS1_O
+			, SUM(CASE  WHEN c.duration_call >= 60 and c.duration_call < 300 AND c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS2_I
+			, SUM(CASE  WHEN c.duration_call >= 60 and c.duration_call < 300 AND c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS2_O
+			, SUM(CASE  WHEN c.duration_call >= 300 and c.duration_call < 600 AND c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS3_I
+			, SUM(CASE  WHEN c.duration_call >= 300 and c.duration_call < 600 AND c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS3_O
+			, SUM(CASE  WHEN c.duration_call >= 600 and c.duration_call < 1200 AND c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS4_I
+			, SUM(CASE  WHEN c.duration_call >= 600 and c.duration_call < 1200 AND c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS4_O
+			, SUM(CASE  WHEN c.duration_call >= 1200 and c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS5_I
+			, SUM(CASE  WHEN c.duration_call >= 1200 and c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS5_O
+		]]>
+		FROM orkuser usr
+		LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id
+		LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id
+		<isEmpty property="onlyRealUser">
+			LEFT OUTER JOIN orkcall c ON c.zirecxId = login.zirecxId
+			AND c.call_start_date = #strStartDate#
+			, orkgroup grp
+			WHERE grp.id = gtu.groupId
+			AND grp.securityGroup = 0
+		</isEmpty>
+		<isNotEmpty property="onlyRealUser">
+			, orkcall c
+			, orkgroup grp
+			WHERE grp.id = gtu.groupId
+			AND c.zirecxId = login.zirecxId AND c.call_start_date = #strStartDate#
+			AND grp.securityGroup = 0
+		</isNotEmpty>
+<!-- 권한관련 시작 (orksegment 조회시) -->
+			<isNotEqual property="sessionZirecxId" compareValue="admin">
+				<isEqual property="accessPolicy" compareValue="group">
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="groupUp">    <!-- groupUp 권한 이면 -->
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="own">
+					AND login.zirecxId = #sessionZirecxId#
+				</isEqual>
+				
+				<isNotEmpty property="schGroupId">
+					<isEqual property="accessPolicy" compareValue="all">
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+				</isNotEmpty>
+			</isNotEqual>
+			<isEqual property="sessionZirecxId" compareValue="admin">
+				<isNotEmpty property="schGroupId">
+			AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			#arrGroupSeq[]# 
+				    </iterate>
+				</isNotEmpty>
+			</isEqual>
+	<!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+			<isEmpty property="includeRetired">
+			AND usr.deleted = 0
+			</isEmpty>
+<!-- 권한관련 끝 (orksegment 조회시) -->
+		GROUP BY usr.id, dbo.usp_get_group_path(gtu.groupId), usr.firstName, login.zirecxId, usr.phonenumber, c.campaign_unique_code, c.campaign_name
+		ORDER BY $orderKey$ $orderType$
+	</select>
+	<select id="linkageReportManageDAO.selectLinkageDurationReportGroupList" parameterClass="reportSearchDurationVO" resultClass="egovMap">
+	<![CDATA[
+		SELECT dbo.usp_get_group_path(gtu.groupId) GROUP_PATH 
+			, c.campaign_unique_code CAMPAIGN_CODE, c.campaign_name CAMPAIGN_NAME
+			, SUM(CASE  WHEN c.INOUTBOUND_CODE = 'I' THEN 1 ELSE 0 End) T_I
+			, SUM(CASE  WHEN c.INOUTBOUND_CODE = 'O' THEN 1 ELSE 0 End) T_O
+			, SUM(CASE  WHEN c.duration_call < 60 AND c.INOUTBOUND_CODE = 'I' THEN 1 ELSE 0 End) LESS1_I
+			, SUM(CASE  WHEN c.duration_call < 60 AND c.INOUTBOUND_CODE = 'O' THEN 1 ELSE 0 End) LESS1_O
+			, SUM(CASE  WHEN c.duration_call >= 60 and c.duration_call < 300 AND c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS2_I
+			, SUM(CASE  WHEN c.duration_call >= 60 and c.duration_call < 300 AND c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS2_O
+			, SUM(CASE  WHEN c.duration_call >= 300 and c.duration_call < 600 AND c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS3_I
+			, SUM(CASE  WHEN c.duration_call >= 300 and c.duration_call < 600 AND c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS3_O
+			, SUM(CASE  WHEN c.duration_call >= 600 and c.duration_call < 1200 AND c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS4_I
+			, SUM(CASE  WHEN c.duration_call >= 600 and c.duration_call < 1200 AND c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS4_O
+			, SUM(CASE  WHEN c.duration_call >= 1200 and c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS5_I
+			, SUM(CASE  WHEN c.duration_call >= 1200 and c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS5_O
+		]]>
+		FROM orkuser usr
+		LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id
+		LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id
+		<isEmpty property="onlyRealUser">
+			LEFT OUTER JOIN orkcall c ON c.zirecxId = login.zirecxId
+			AND c.call_start_date = #strStartDate#
+			, orkgroup grp
+			WHERE grp.id = gtu.groupId
+			AND grp.securityGroup = 0
+		</isEmpty>
+		<isNotEmpty property="onlyRealUser">
+			, orkcall c
+			, orkgroup grp
+			WHERE grp.id = gtu.groupId
+			AND c.zirecxId = login.zirecxId AND c.call_start_date = #strStartDate#
+			AND grp.securityGroup = 0
+		</isNotEmpty>
+<!-- 권한관련 시작 (orksegment 조회시) -->
+			<isNotEqual property="sessionZirecxId" compareValue="admin">
+				<isEqual property="accessPolicy" compareValue="group">
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="groupUp">    <!-- groupUp 권한 이면 -->
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="own">
+					AND login.zirecxId = #sessionZirecxId#
+				</isEqual>
+				
+				<isNotEmpty property="schGroupId">
+					<isEqual property="accessPolicy" compareValue="all">
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+				</isNotEmpty>
+			</isNotEqual>
+			<isEqual property="sessionZirecxId" compareValue="admin">
+				<isNotEmpty property="schGroupId">
+			AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			#arrGroupSeq[]# 
+				    </iterate>
+				</isNotEmpty>
+			</isEqual>
+	<!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+			<isEmpty property="includeRetired">
+			AND usr.deleted = 0
+			</isEmpty>
+<!-- 권한관련 끝 (orksegment 조회시) -->
+		GROUP BY dbo.usp_get_group_path(gtu.groupId), c.campaign_unique_code, c.campaign_name
+		ORDER BY $orderKey$ $orderType$
+	</select>
+	<select id="linkageReportManageDAO.selectLinkageDurationReportCampaignList" parameterClass="reportSearchDurationVO" resultClass="egovMap">
+	<![CDATA[
+		SELECT c.campaign_unique_code CAMPAIGN_CODE, c.campaign_name CAMPAIGN_NAME
+			, SUM(CASE  WHEN c.INOUTBOUND_CODE = 'I' THEN 1 ELSE 0 End) T_I
+			, SUM(CASE  WHEN c.INOUTBOUND_CODE = 'O' THEN 1 ELSE 0 End) T_O
+			, SUM(CASE  WHEN c.duration_call < 60 AND c.INOUTBOUND_CODE = 'I' THEN 1 ELSE 0 End) LESS1_I
+			, SUM(CASE  WHEN c.duration_call < 60 AND c.INOUTBOUND_CODE = 'O' THEN 1 ELSE 0 End) LESS1_O
+			, SUM(CASE  WHEN c.duration_call >= 60 and c.duration_call < 300 AND c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS2_I
+			, SUM(CASE  WHEN c.duration_call >= 60 and c.duration_call < 300 AND c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS2_O
+			, SUM(CASE  WHEN c.duration_call >= 300 and c.duration_call < 600 AND c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS3_I
+			, SUM(CASE  WHEN c.duration_call >= 300 and c.duration_call < 600 AND c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS3_O
+			, SUM(CASE  WHEN c.duration_call >= 600 and c.duration_call < 1200 AND c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS4_I
+			, SUM(CASE  WHEN c.duration_call >= 600 and c.duration_call < 1200 AND c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS4_O
+			, SUM(CASE  WHEN c.duration_call >= 1200 and c.INOUTBOUND_CODE = 'I'THEN 1 ELSE 0 End) LESS5_I
+			, SUM(CASE  WHEN c.duration_call >= 1200 and c.INOUTBOUND_CODE = 'O'THEN 1 ELSE 0 End) LESS5_O
+		]]>
+		FROM orkuser usr
+		LEFT OUTER JOIN orkloginstring login ON login.user_id = usr.id
+		LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id
+		<isEmpty property="onlyRealUser">
+			LEFT OUTER JOIN orkcall c ON c.zirecxId = login.zirecxId
+			AND c.call_start_date = #strStartDate#
+			, orkgroup grp
+			WHERE grp.id = gtu.groupId
+			AND grp.securityGroup = 0
+		</isEmpty>
+		<isNotEmpty property="onlyRealUser">
+			, orkcall c
+			, orkgroup grp
+			WHERE grp.id = gtu.groupId
+			AND c.zirecxId = login.zirecxId AND c.call_start_date = #strStartDate#
+			AND grp.securityGroup = 0
+		</isNotEmpty>
+<!-- 권한관련 시작 (orksegment 조회시) -->
+			<isNotEqual property="sessionZirecxId" compareValue="admin">
+				<isEqual property="accessPolicy" compareValue="group">
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="groupUp">    <!-- groupUp 권한 이면 -->
+					AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+						#arrGroupSeq[]# 
+				    </iterate>
+				</isEqual>
+				
+				<isEqual property="accessPolicy" compareValue="own">
+					AND login.zirecxId = #sessionZirecxId#
+				</isEqual>
+				
+				<isNotEmpty property="schGroupId">
+					<isEqual property="accessPolicy" compareValue="all">
+						AND grp.id IN
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+					    </iterate>
+					</isEqual>
+				</isNotEmpty>
+			</isNotEqual>
+			<isEqual property="sessionZirecxId" compareValue="admin">
+				<isNotEmpty property="schGroupId">
+			AND grp.id IN
+					<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+			#arrGroupSeq[]# 
+				    </iterate>
+				</isNotEmpty>
+			</isEqual>
+	<!-- 퇴사자 포함 여부 (deleted(0) : 미퇴사자, deleted(1) : 퇴사자) -->
+			<isEmpty property="includeRetired">
+			AND usr.deleted = 0
+			</isEmpty>
+<!-- 권한관련 끝 (orksegment 조회시) -->
+		GROUP BY c.campaign_unique_code, c.campaign_name
+		ORDER BY $orderKey$ $orderType$
+	</select>
+
+
+
+
+<!-- 통화길이별 콜통계 끝 -->
+	<!-- 조직도 -->
+	<select id="linkageReportManageDAO.selectGroupList2" parameterClass="reportSearchVO" resultClass="egovMap">
+		SELECT childGroupId FROM orkgrouptogroup WHERE parentGroupId IN
+			<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+		   	    #arrGroupSeq[]# 
+		    </iterate>
+	</select>
+	
+	<!-- 조직도 -->
+	<select id="linkageReportManageDAO.selectGroupList" parameterClass="reportSearchDurationVO" resultClass="egovMap">
+		SELECT childGroupId FROM orkgrouptogroup WHERE parentGroupId IN
+			<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+		   	    #arrGroupSeq[]# 
+		    </iterate>
+	</select>
+</sqlMap>

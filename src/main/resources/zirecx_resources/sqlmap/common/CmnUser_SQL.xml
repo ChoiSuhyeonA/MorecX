@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="CmnUser">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="cmnUserSearchVO" type="kr.co.irlink.zirecx.common.service.CmnUserSearchVO"/>
+	
+	<resultMap id="cmnUserMap" class="kr.co.irlink.zirecx.common.service.CmnUserSearchVO">
+		<result property="userId"  column="id"/>
+	  	<result property="zirecxId"  column="zirecxId"/>
+	  	<result property="userName" column="firstname"/>
+	</resultMap>
+	
+	<select id="cmnUserSearchDAO.selectUserPopList" parameterClass="cmnUserSearchVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT distinct usr.id, usrlogin.zirecxId, usr.firstname
+			FROM orkuser usr, orkgrouptouser grp, orkloginstring usrlogin
+			WHERE usr.id = grp.userId
+			AND usrlogin.user_id = usr.id
+		]]>
+		
+			<isNotEmpty property="userId">
+				AND usrlogin.zirecxId = #userId#
+			</isNotEmpty>
+			<isNotEmpty property="userName">
+				AND usr.firstname = #userName#
+			</isNotEmpty>
+		<isNotEqual property="auth" compareValue="admin">
+			<isNotEmpty property="groupSeq">
+				AND grp.groupId = #groupSeq#
+			</isNotEmpty>
+		</isNotEqual>
+		ORDER BY usr.firstname ASC
+		
+	</select>
+	
+	<!-- 2.0 pageType 추가 -->
+	<select id="cmnUserSearchDAO.selectUserCheck" parameterClass="cmnUserSearchVO" resultMap="cmnUserMap">
+		
+		<!-- 스마트폰 작업자 조회 -->
+		<isEqual property="pageType" compareValue="smartPhone">
+			<![CDATA[
+			  SELECT TOP 2 usr.id, login.zirecxId, usr.firstname
+			  FROM orkuser usr, orkloginstring login, orkgroup grp, orkgrouptouser gtu 
+			  WHERE usr.id = login.user_id  
+			  AND grp.id = gtu.groupId  
+			  AND gtu.userId = usr.id  
+			  AND grp.securityGroup = 1  
+			  AND usr.deleted = 0
+			  AND grp.id = 246  		
+			]]>
+		</isEqual>
+		
+		<!-- 사용자 조회  -->
+		<isNotEqual property="pageType" compareValue="smartPhone">
+			<![CDATA[
+			  SELECT TOP 2 usr.id, login.zirecxId, usr.firstname
+			  FROM orkuser usr, orkloginstring login, orkgroup grp, orkgrouptouser gtu 
+			  WHERE usr.id = login.user_id  
+			  AND grp.id = gtu.groupId  
+			  AND gtu.userId = usr.id  
+			  AND grp.securityGroup = 0  
+			  AND usr.deleted = 0  		
+			]]>
+			
+			<!-- 사용자 관리 페이지인 경우 상위 권한은 조회되지 않게한다. -->
+			<isEqual property="pageType" compareValue="system">
+				<![CDATA[
+					AND (
+						SELECT sortOrder FROM orkgroup a, orkgrouptouser b
+						WHERE a.id = b.groupId
+						AND a.securityGroup = 1
+						AND b.userId = usr.id
+					) >= #strLoginUserAuth#
+				]]>
+			</isEqual>
+			
+			<isEqual property="strAccessPolicy" compareValue="own">
+				AND grp.id = #strSessionGroupId#
+				AND login.zirecxId = #strSessionZirecxId#
+			</isEqual>
+			
+			<isEqual property="strAccessPolicy" compareValue="group">
+				<isNotEmpty property="arrChildGroupId">
+					AND grp.id
+						<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+							#arrChildGroupId[]#
+						</iterate>
+				</isNotEmpty>
+			</isEqual>
+			
+			<isEqual property="strAccessPolicy" compareValue="groupUp">
+				<isNotEmpty property="arrChildGroupId">
+					AND grp.id
+						<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+							#arrChildGroupId[]#
+						</iterate>
+				</isNotEmpty>
+			</isEqual>
+			
+			<isNotEmpty property="searchGroupSeq">
+				<isNotEmpty property="arrChildGroupId">
+					AND grp.id
+						<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+							#arrChildGroupId[]#
+						</iterate>
+				</isNotEmpty>
+			</isNotEmpty>
+			
+		</isNotEqual>
+		
+		<isEqual property="searchType" compareValue="zirecxId">
+			AND login.zirecxId = #searchText#
+		</isEqual>
+		<isEqual property="searchType" compareValue="firstname">
+			AND usr.firstname LIKE (#searchText# + '%')
+		</isEqual>
+	</select>
+	
+	<select id="cmnUserSearchDAO.selectUserList" parameterClass="cmnUserSearchVO" resultClass="egovMap">	
+		<![CDATA[
+			  SELECT usr.id, login.zirecxId, usr.firstname
+			  FROM orkuser usr, orkloginstring login, orkgroup grp, orkgrouptouser gtu 
+			  WHERE usr.id = login.user_id  
+			  AND grp.id = gtu.groupId  
+			  AND gtu.userId = usr.id  
+			  AND grp.securityGroup = 0  
+			  AND usr.deleted = 0 
+		]]>
+			<!-- 사용자 관리 페이지인 경우 상위 권한은 조회되지 않게한다. -->
+			<isEqual property="pageType" compareValue="system">
+				<![CDATA[
+					AND (
+						SELECT sortOrder FROM orkgroup a, orkgrouptouser b
+						WHERE a.id = b.groupId
+						AND a.securityGroup = 1
+						AND b.userId = usr.id
+					) >= #strLoginUserAuth#
+				]]>
+			</isEqual>
+			
+			
+			<isEqual property="strAccessPolicy" compareValue="own">
+				AND grp.id = #strSessionGroupId#
+				AND login.zirecxId = #strSessionZirecxId#
+			</isEqual>
+			
+			<isEqual property="strAccessPolicy" compareValue="group">
+				<isNotEmpty property="arrChildGroupId">
+					AND grp.id
+						<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+							#arrChildGroupId[]#
+						</iterate>
+				</isNotEmpty>
+			</isEqual>
+			
+			<isEqual property="strAccessPolicy" compareValue="groupUp">
+				<isNotEmpty property="arrChildGroupId">
+					AND grp.id
+						<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+							#arrChildGroupId[]#
+						</iterate>
+				</isNotEmpty>
+			</isEqual>
+			
+			<isNotEmpty property="searchGroupSeq">
+				<isNotEmpty property="arrChildGroupId">
+					AND grp.id
+						<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+							#arrChildGroupId[]#
+						</iterate>
+				</isNotEmpty>
+			</isNotEmpty>
+			
+			
+			<isNotEmpty property="userSearchSeq">
+				AND login.zirecxId = #userSearchSeq#
+			</isNotEmpty>
+			
+			<isNotEmpty property="userSearchName">
+				AND usr.firstname LIKE (#userSearchName# + '%')
+			</isNotEmpty>
+			<!-- 권한관련 끝 -->
+			ORDER BY usr.id ASC
+	</select>
+	
+	
+	<!-- 김해동 추가  -->
+	<select id="cmnUserSearchDAO.selectLoginUserAuth" parameterClass="cmnUserSearchVO" resultClass="String">
+		SELECT c.sortOrder
+		FROM orkloginstring a, orkgrouptouser b, orkgroup c
+		WHERE a.user_id = b.userId
+		AND b.groupId = c.id
+		AND securityGroup = 1
+		AND a.zirecxId = #strSessionZirecxId#
+	</select>
+	
+	
+</sqlMap>

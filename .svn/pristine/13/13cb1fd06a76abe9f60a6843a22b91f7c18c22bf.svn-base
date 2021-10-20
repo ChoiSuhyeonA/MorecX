@@ -1,0 +1,346 @@
+@CHARSET "UTF-8";
+
+body {
+	margin: 0px;
+	text-align: left;
+}
+
+/* 리스트 박스 */
+.list_table_box{
+	border:1px solid #cbe0dd;
+	border-collapse:collapse;
+}
+
+/* 테이블 컬럼 */
+td.list_header {
+	font-family: "돋움";
+	font-size: 12px;
+	color: #4a637b;
+	background:url('../images/bg/bg_list_header.gif'); 
+	height:26px;
+	text-align: center;
+	border:1px solid #cbe0dd;
+}
+
+/* 테이블 컬럼(통계) */
+td.list_header_report {
+	font-family: "돋움";
+	font-size: 12px;
+	color: #4a637b;
+	background:#f0f9f9; 
+	height:26px;
+	text-align: center;
+	border:1px solid #d0e1e0;
+}
+
+/* 테이블 값 */
+td.list_value {
+	font-family: "돋움";
+	font-size: 12px;
+	color: #737373;
+	height:24px;
+	border:1px solid #cbe0dd;
+	cursor:arrow;
+}
+
+/* 테이블 값 */
+td.list_value_monitor {
+	font-family: "돋움";
+	font-size: 12px;
+	color: #ffffff;
+	border:1px solid #cbe0dd;
+}
+
+/* 비밀번호 변경 테이블 컬럼 */
+td.password_header {
+	font-family: "돋움";
+	font-size: 11px;
+	color: #4d637d;
+	height:24px;
+	border:1px solid #cbe0e1;
+	cursor:arrow;
+}
+
+/* 비밀번호 변경 테이블 값 */
+td.password_value {
+	font-family: "돋움";
+	font-size: 0px;
+	color: #9e9e9e;
+	height:24px;
+	background:#ecfafb; 
+	border:1px solid #cbe0e1;
+	cursor:arrow;
+}
+
+/* 검색 제목 */
+.search_title {
+	background:url('../images/icon/icon_search_box.gif') no-repeat; 
+}
+
+/* 검색박스 */
+.search_area {
+	border:1px solid #cbe0e0;
+	background-color:#f1f6f6; 
+}
+
+/* 검색조건 */
+.search_condition{
+	font-family: "돋움";
+	font-size: 12px;
+	color: #5a5a5a;
+	margin-bottom:15px;
+/*	background-position: -1px 6px; padding-top: 3px; padding-left:13px;  */
+}
+
+/* 검색조건 select */
+.search_condition_select{
+	font-family: "돋움";
+	font-size: 12px;
+	color: #5a5a5a;
+/*	background-position: -1px 6px; padding-top: 3px; padding-left:13px;  */
+}
+
+.search_value {
+	font-family: "돋움";
+	font-size: 12px;
+	border:1px solid #cad0d5; background-color:#FFFFFF;
+	height: 16px;
+/*	padding-top: 4px; */
+	line-height:16px;
+	color: #5a5a5a;
+}
+
+.search_value_readonly {
+	font-family: "돋움";
+	font-size: 12px;
+	border : 1px solid #e1e2e7; background-color:#FFFFFF;
+	height: 16px;
+/*	padding-top: 4px; */
+	color: #b3b3b3;
+}
+
+.simple_search_button {
+/*	padding-top: 4px; */
+	color: #5a5a5a;
+}
+
+/* 목록 제목 */
+.list_title {
+	background:url('../images/icon/icon_list_box.gif') no-repeat; 
+}
+
+/* 굿콜 전용 녹취 목록 제목 */
+.goodcall_record_list_title {
+	background:url('../images/icon/icon_list_box_goodcallrecord_on.gif') no-repeat; 
+	cursor:pointer;
+}
+
+/* 굿콜 전용 연동형 목록 제목 */
+.goodcall_link_list_title {
+	background:url('../images/icon/icon_list_box_goodcalllink_off.gif') no-repeat; 
+	cursor:pointer;
+}
+
+/* 상세목록 제목 */
+.detail_title {
+	background:url('../images/icon/icon_detail_box.gif') no-repeat; 
+}
+
+/* 버튼 */
+.button {
+	cursor:hand;
+}
+
+/* 상세정보 컬럼 */
+.detail_column {
+	font-family: "돋움";
+	font-size: 12px;
+	color: #506280;
+	padding-left: 10px;
+	border: 1px solid #cbe0dd;
+	height: 25px;
+	
+}
+
+/* 상세정보 값 */
+.detail_value_writable {
+	font-family: "돋움";
+	font-size: 12px;
+	color: #737373;
+	border : 1px solid #cad0d5;
+	height: 16px;
+	line-height:16px;
+/*	padding-top: 3px; */
+}
+
+/* 상세정보 값 */
+.detail_value_readonly {
+	font-family: "돋움";
+	font-size: 12px;
+	color: #b3b3b3;
+	border : 1px solid #e1e2e7;
+	height: 16px;
+	line-height:16px;
+/*	padding-top: 3px;  */
+}
+
+/* 상세정보 설명 */
+.detail_description {
+	font-family: "돋움";
+	font-size: 12px;
+	color: #919090;
+	background-color: #f1f6f5;
+	height: 25px;
+	padding-left: 6px;
+	border: 1px solid #cbe0dd;
+}
+
+/* 페이지 제목 */
+.page_title {
+	color: #FFFFFF;
+	font-size : 18px;
+	font-family: "돋움"; 
+	font-weight: bold;
+	height: 36px;
+	text-align: center;
+}
+
+/* 페이징 박스 */
+.paging_table_box{
+	border:1px solid #cbe0e0;
+	background-color: #f1f6f6;
+	font-size : 11px;
+	font-family: "돋움"; 
+	border-collapse:collapse;
+	color:4f4e4e;
+}
+
+/* 페이징 박스 하위 td*/
+.paging_table_box td{
+	font-size : 11px;
+	font-family: "돋움"; 
+	color:#4f4e4e;
+}
+
+/* 페이징 박스  하위 select*/
+.paging_table_box select{
+	font-size : 11px;
+	font-family: "돋움"; 
+	color:#4f4e4e;
+	width: 45px;
+}
+
+/* 전체 화면 박스 */
+.screen_bar {
+	border:1px solid #3698b8;
+	background-color: #5ebbd9;
+	border-collapse:collapse;
+}
+
+/* 팝업 박스 */
+.popup_box {
+	border:1px solid #c6e3ed;
+}
+
+/* 실시간모니터링 상세정보 그룹명 */
+.monitoring_group_name_title {
+	font-size : 12px;
+	font-family: "돋움"; 
+	color:#358ba8;
+	font-weight: bold;
+}
+
+/* 실시간모니터링 상세정보 시간 */
+.monitoring_time_value {
+	font-size : 12px;
+	font-family: "돋움"; 
+	color:#585858;
+}
+
+/* 실시간모니터링 상세정보 이름 */
+.monitoring_name_value {
+	font-size : 12px;
+	font-family: "돋움"; 
+	color:#808080;
+}
+
+/* 파일변환 팝업  */
+.popup_cvtFile {
+	background:url('../images/bg/bg_change_file.gif'); 
+	border:1px solid #c6e3ed;
+}
+
+/* 파일변환 팝업  */
+.popup_uploadFile {
+	background:url('../images/bg/bg_upload_pop.png') no-repeat center center fixed; 
+	background-size: cover;
+	/* border:1px solid #c6e3ed; */
+}
+
+
+/* 플레이어 팝업  */
+.popup_player {
+	background:url('../images/bg/bg_player.gif'); 
+	border:1px solid #c6e3ed;
+}
+
+/* 메모 팝업  */
+.popup_call_memo {
+	background:url('../images/bg/bg_memo.gif'); 
+	border:1px solid #c6e3ed;
+}
+
+/* 굿콜 팝업  */
+.popup_goodcall {
+	background:url('../images/bg/bg_goodcall.gif'); 
+	border:1px solid #c6e3ed;
+}
+
+/* 투명 textarea  */
+.popup_call_memo_textarea {
+	width: 310px;
+	height: 230px;
+	border:1;
+	overflow:auto;
+	font-family: 돋움;
+	font-size: 11px;
+	color: #737373;
+	scrollbar-face-color: #ffffff;
+	scrollbar-shadow-color: #cccccc;
+	scrollbar-highlight-color:#cccccc;
+	scrollbar-3dlight-color: #ffffff;
+	scrollbar-darkshadow-color: #ffffff;
+	scrollbar-track-color: #ffffff;
+	scrollbar-arrow-color: #ffffff;
+	background-color:transparent;
+	filter: chroma(color=ffffff);
+}
+
+.popup_goodcall_textarea {
+	width: 310px;
+	height: 200px;
+	border:0;
+	overflow:auto;
+	font-family: 돋움;
+	font-size: 11px;
+	color: #737373;
+	scrollbar-face-color: #ffffff;
+	scrollbar-shadow-color: #cccccc;
+	scrollbar-highlight-color:#cccccc;
+	scrollbar-3dlight-color: #ffffff;
+	scrollbar-darkshadow-color: #ffffff;
+	scrollbar-track-color: #ffffff;
+	scrollbar-arrow-color: #ffffff;
+	background-color:transparent;
+	filter: chroma(color=ffffff);
+}
+
+/* 테이블 값 */
+td.list_no_result {
+	font-family: "돋움";
+	font-size: 12px;
+	color: #737373;
+	height:72px;
+	border:1px solid #cbe0dd;
+	cursor:arrow;
+}

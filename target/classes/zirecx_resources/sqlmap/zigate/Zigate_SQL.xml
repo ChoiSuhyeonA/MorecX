@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Zigate">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="zigateVO" type="kr.co.irlink.zirecx.zigate.service.ZigateVO"/>
+	<typeAlias 	alias="recordPenVO" type="kr.co.irlink.zirecx.record.service.RecordPenVO"/>
+	
+	<insert id="zigateDAO.faceCallInfoInsert" parameterClass="recordPenVO">
+		<selectKey keyProperty="seq" resultClass="int">
+			INSERT INTO orkpen (
+				  user_id
+				, zirecxId
+				, phone_number
+				, customer_name
+				, facetoface
+				, visit_place
+				, visit_date
+				, visit_date_class
+				, play_time
+				, upload_date
+				, recordFilePath
+				, recordFileName
+				, record_mode_code
+				, deleted
+				, disabled
+			) VALUES ( 
+				  #schUserZirecxId#
+				, #zirecxId#
+				, #phoneNumber#
+				, #customerName#
+				, #faceToFace#
+				, #visitPlace#
+				, #visitDate#
+				, #visitDateClass#
+				, #playTime#
+				, CONVERT(CHAR(19), GETDATE(), 20)
+				, #recordFilePath#
+				, #recordFileName#
+				, #recordModeCode#
+				, 0
+				, 0
+			)
+			
+			SELECT SCOPE_IDENTITY() as seq
+		</selectKey>
+	</insert>
+	
+	<insert id="zigateDAO.allCallInfoInsert" parameterClass="zigateVO">
+		<selectKey keyProperty="id" resultClass="int">
+		INSERT INTO	orkcall 
+			( 
+					SIP_CALL_ID 
+				  , USER_ID 
+				  , ZIRECXID 
+				  , PHONE_NUMBER 
+				  , PHONE_CODE 
+				  , CALL_START_DATE 
+				  , CALL_START_TIME 
+				  , CALL_CONNECT_TIME 
+				  , CALL_END_DATE 
+				  , CALL_END_TIME
+				   
+				  , REC_START_TIME_PC 
+				  , REC_START_TIME_MEMORY 
+				  , REC_END_TIME_PC 
+				  , REC_END_TIME_MEMORY 
+				  , UPLOAD_DATE_PC 
+				  , UPLOAD_TIME_PC 
+				  , UPLOAD_DATE_MEMORY 
+				  , UPLOAD_TIME_MEMORY 
+				  , WRAPUP_DATE 
+				  , WRAPUP_TIME
+				   
+				  , DURATION_CALL 
+				  , DURATION_RING 
+				  , DURATION_TALK 
+				  , DURATION_WRAPUP 
+				  , CUSTOMER_UNIQUE_CODE 
+				  , CUSTOMER_NAME 
+				  , SOCIAL_ID 
+				  , CAMPAIGN_UNIQUE_CODE 
+				  , CAMPAIGN_NAME 
+				  , CALL_RELATION_CODE
+				   
+				  , CALL_OUTCOME_CODE_MASTER 
+				  , CALL_OUTCOME_CODE 
+				  , CALL_OUTCOME_MASTER 
+				  , CALL_OUTCOME 
+				  , CALL_MEMO 
+				  , INOUTBOUND_CODE 
+				  , CALL_CODE 
+				  , PARTNERBY_FLAG 
+				  , CARD_NO 
+				  , CARD_EXPIRE_DATE
+				   
+				  , RECORD_SUCCESS_CODE_PC 
+				  , UPLOAD_SUCCESS_CODE_PC 
+				  , RECORD_SUCCESS_CODE_MEMORY 
+				  , UPLOAD_SUCCESS_CODE_MEMORY 
+				  , RECORD_PATH_PC 
+				  , RECORD_FILENAME_PC 
+				  , RECORD_PATH_FAIL_MEMORY 
+				  , RECORD_FILENAME_MEMORY 
+				  , RECORD_PATH_REMOTE_PC 
+				  , RECORD_FILENAME_REMOTE_PC
+				   
+				  , RECORD_PATH_REMOTE_MEMORY 
+				  , RECORD_FILENAME_REMOTE_MEMORY 
+				  , SYSTEM_ID 
+				  , DATECREATED
+				  
+				  , USER_PHONE_NUMBER
+				  , USER_PHONE_NUMBER_GUBUN
+				  
+				  , GROUP_NAME 
+			) VALUES (
+				#SIP_CALL_ID#,
+				#END_POINT#,
+				#USER_ID#,
+				#PHONE_NUMBER#,
+				#PHONE_CODE#,
+				#CALL_START_DATE#,
+				#CALL_START_TIME#,
+				#CALL_CONNECT_TIME#,
+				#CALL_END_DATE#,
+				#CALL_END_TIME#,
+				
+				#REC_START_TIME_PC#,
+				#REC_START_TIME_MEM#,
+				#REC_END_TIME_PC#,
+				#REC_END_TIME_MEM#,
+				#UPLOAD_DATE_PC#,
+				#UPLOAD_TIME_PC#,
+				#UPLOAD_DATE_MEM#,
+				#UPLOAD_TIME_MEM#,
+				#WRAPUP_DATE#,
+				#WRAPUP_TIME#,
+				
+				#DURATION_CALL#,
+				#DURATION_RING#,
+				#DURATION_TALK#,
+				#DURATION_WRAPUP#,
+				#CUSTOMER_ID#,
+				#CUSTOMER_NAME#,
+				#SOCIAL_ID#,
+				#CAMPAIGN_ID#,
+				#CAMPAIGN_NAME#,
+				#CALL_RELATION_CODE#,
+				
+				#CALL_OUTCOME_CODE_MASTER#,
+				#CALL_OUTCOME_CODE#,
+				#CALL_OUTCOME_MASTER#,
+				#CALL_OUTCOME#,
+				#CALL_MEMO#,
+				#INOUTBOUND_CODE#,
+				#CALL_CODE#,
+				#PARTNERBY_FLAG#,
+				#CARD_NO#,
+				
+				#CARD_EXPIRE_DATE#,
+				#REC_SUCCESS_CODE_PC#,
+				#UPLOAD_SUCCESS_CODE_PC#,
+				#REC_SUCCESS_CODE_MEM#,
+				#UPLOAD_SUCCESS_CODE_MEM#,
+				#REC_PATH_PC#,
+				#REC_FILENAME_PC#,
+				#REC_PATH_MEM#,
+				#REC_FILENAME_MEM#,
+				#REC_PATH_REMOTE_PC#,
+				#REC_FILENAME_REMOTE_PC#,
+				#REC_PATH_REMOTE_MEM#,
+				#REC_FILENAME_REMOTE_MEM#,
+				#SYSTEM_ID#,
+				getdate(),
+				
+				#USER_PHONE_NUMBER#,
+				#USER_PHONE_NUMBER_GUBUN#,
+				
+				#GROUP_NAME#
+			)
+			
+			SELECT SCOPE_IDENTITY() as id
+		</selectKey>
+	</insert>
+	
+	<select id="zigateDAO.selectGroupNamePath" parameterClass="zigateVO" resultClass="String">
+		SELECT dbo.usp_get_group_path(c.id) as groupId
+		FROM orkloginstring a, orkgrouptouser b, orkgroup c
+		WHERE a.user_id = b.userId
+		AND b.groupId = c.id
+		ANd c.securityGroup = 0
+		AND a.zirecxId = #USER_ID#
+	</select>
+	
+	<select id="zigateDAO.selectUserId" parameterClass="zigateVO" resultClass="string">
+		select isnull(zirecxId, '') as zirecxId
+		from 	orkloginstring login, orkuser usr
+		where loginstring = #END_POINT#
+		and usr.id = login.user_id
+		and recordable = 1
+	</select>
+	
+	<select id="zigateDAO.selectUserId2" parameterClass="zigateVO" resultClass="String">
+		SELECT isnull(usr.id, '') as userId
+		FROM orkloginstring login, orkuser usr
+		WHERE login.user_id = usr.id
+		AND login.loginstring = #END_POINT#
+		AND recordable = 1
+	</select>
+	
+	<update id="zigateDAO.allCallInfoUpdate" parameterClass="zigateVO">
+		UPDATE orkcall set
+			SIP_CALL_ID = #SIP_CALL_ID#,
+			PHONE_NUMBER = #PHONE_NUMBER#,
+			PHONE_CODE = #PHONE_CODE#,
+			CALL_START_DATE = #CALL_START_DATE#,
+			CALL_START_TIME = #CALL_START_TIME#,
+			CALL_CONNECT_TIME = #CALL_CONNECT_TIME#,
+			CALL_END_DATE = #CALL_END_DATE#,
+			CALL_END_TIME = #CALL_END_TIME#,
+			REC_START_TIME_PC = #REC_START_TIME_PC#,
+			REC_START_TIME_MEMORY = #REC_START_TIME_MEMORY#,
+			REC_END_TIME_PC = #REC_END_TIME_PC#,
+			REC_END_TIME_MEMORY = #REC_END_TIME_MEMORY#,
+			UPLOAD_DATE_PC = #UPLOAD_DATE_PC#,
+			UPLOAD_TIME_PC = #UPLOAD_TIME_PC#,
+			UPLOAD_DATE_MEMORY = #UPLOAD_DATE_MEMORY#,
+			UPLOAD_TIME_MEMORY = #UPLOAD_TIME_MEMORY#,
+			WRAPUP_DATE = #WRAPUP_DATE#,
+			WRAPUP_TIME = #WRAPUP_TIME#,
+			DURATION_CALL = #DURATION_CALL#,
+			DURATION_RING = #DURATION_RING#,
+			DURATION_TALK = #DURATION_TALK#,
+			DURATION_WRAPUP = #DURATION_WRAPUP#,
+			CUSTOMER_UNIQUE_CODE = #CUSTOMER_UNIQUE_CODE#,
+			CUSTOMER_NAME = #CUSTOMER_NAME#,
+			SOCIAL_ID = #SOCIAL_ID#,
+			CAMPAIGN_UNIQUE_CODE = #CAMPAIGN_UNIQUE_CODE#,
+			CAMPAIGN_NAME = #CAMPAIGN_NAME#,
+			CALL_RELATION_CODE = #CALL_RELATION_CODE#,
+			CALL_OUTCOME_CODE_MASTER = #CALL_OUTCOME_CODE_MASTER#,
+			CALL_OUTCOME_CODE = #CALL_OUTCOME_CODE#,
+			CALL_OUTCOME_MASTER = #CALL_OUTCOME_MASTER#,
+			CALL_OUTCOME = #CALL_OUTCOME#,
+			CALL_MEMO = #CALL_MEMO#,
+			INOUTBOUND_CODE = #INOUTBOUND_CODE#,
+			CALL_CODE = #CALL_CODE#,
+			PARTNERBY_FLAG = #PARTNERBY_FLAG#,
+			RECORD_SUCCESS_CODE_PC = #RECORD_SUCCESS_CODE_PC#,
+			UPLOAD_SUCCESS_CODE_PC = #UPLOAD_SUCCESS_CODE_PC#,
+			RECORD_SUCCESS_CODE_MEMORY = #RECORD_SUCCESS_CODE_MEMORY#,
+			UPLOAD_SUCCESS_CODE_MEMORY = #UPLOAD_SUCCESS_CODE_MEMORY#,
+			RECORD_PATH_PC = #RECORD_PATH_PC#,
+			RECORD_FILENAME_PC = #RECORD_FILENAME_PC#,
+			RECORD_PATH_FAIL_MEMORY = #RECORD_PATH_FAIL_MEMORY#,
+			RECORD_FILENAME_MEMORY = #RECORD_FILENAME_MEMORY#,
+			RECORD_PATH_REMOTE_PC = #RECORD_PATH_REMOTE_PC#,
+			RECORD_FILENAME_REMOTE_PC = #RECORD_FILENAME_REMOTE_PC#,
+			RECORD_PATH_REMOTE_MEMORY = #RECORD_PATH_REMOTE_MEMORY#,
+			RECORD_FILENAME_REMOTE_MEMORY = #RECORD_FILENAME_REMOTE_MEMORY#,
+			SYSTEM_ID = #SYSTEM_ID#,
+			DATEUPDATED = getdate()
+		where ID = #REC_ID#
+	</update>
+	
+	<select id="zigateDAO.getInitInfo" parameterClass="zigateVO" resultClass="zigateVO">
+		SELECT	firstname, dbo.usp_get_group_path(gtu.groupId), grp.id 
+			, uploadType.codeName, httpAddress.codeName, httpUserId.codeName
+			, httpPassword.codeName, httpPort.codeName, httpMode.codeName, ftpAddress.codeName
+			, ftpUserId.codeName, ftpPassword.codeName, ftpPort.codeName, ftpMode.codeName
+			, httpPage.codeName, httpCharaterset.codeName, storageDate.codeName
+			, usr.deleted, login.loginstring, sipAddress.codeName, sipDomain.codeName
+			, autoSaveTime.codeName
+		FROM		orkuser usr, orkgrouptouser gtu, orkgroup grp, orkloginstring login   
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='uploadType' AND deleted=0) uploadType
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='httpAddress' AND deleted=0) httpAddress
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='httpUserId' AND deleted=0) httpUserId
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='httpPassword' AND deleted=0) httpPassword
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='httpPort' AND deleted=0) httpPort
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='httpMode' AND deleted=0) httpMode
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='ftpAddress' AND deleted=0) ftpAddress
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='ftpUserId' AND deleted=0) ftpUserId
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='ftpPassword' AND deleted=0) ftpPassword
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='ftpPort' AND deleted=0) ftpPort
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='ftpMode' AND deleted=0) ftpMode 			
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='httpPage' AND deleted=0) httpPage
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='httpCharaterset' AND deleted=0) httpCharaterset
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10021 AND codeValue='storageDate' AND deleted=0) storageDate 
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10022 AND codeValue='1' AND deleted=0) sipAddress 
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10022 AND codeValue='2' AND deleted=0) sipDomain 
+			,( SELECT codeName FROM orkcode WHERE codeMaster=10024 AND codeValue='1' AND deleted=0) autoSaveTime 
+		WHERE	usr.id = gtu.userId
+			AND grp.id = gtu.groupId
+			AND grp.securityGroup = 0
+			AND login.user_id = usr.id
+			AND login.zirecxid = #USER_ID#
+	</select>
+	
+	<select id="zigateDAO.getLogin" parameterClass="zigateVO" resultClass="zigateVO">
+		<isEqual compareValue="REQ" property="LISTEN_INFO_REQ" >
+			SELECT	login.loginstring, usr.logoutsupported, usr.autouploadsupported, usr.id, grp.listenSupported, grp.storagePeriod, 
+					usr.resetPasswordFlag, usr.password, usr.salt 
+		</isEqual>
+		<isNotEqual compareValue="REQ" property="LISTEN_INFO_REQ">
+			SELECT	login.loginstring, usr.logoutsupported, usr.autouploadsupported, usr.id,
+					usr.resetPasswordFlag, usr.password, usr.salt
+		</isNotEqual>
+		FROM		orkloginstring login , orkuser usr
+			LEFT OUTER JOIN orkgrouptouser gtu ON gtu.userId = usr.id
+			LEFT OUTER JOIN orkgroup grp ON grp.id = gtu.groupId AND grp.securityGroup = 0
+		WHERE	usr.deleted = 0
+			AND login.zirecxid = #USER_ID#
+			<!-- 
+			AND usr.password = #USER_PW#
+			 -->
+			AND login.user_id = usr.id
+		<isNotEqual compareValue="admin" property="USER_ID">
+			AND securityGroup = 0
+		</isNotEqual>
+		<!-- 	
+		<isNotEqual compareValue="admin" property="USER_ID">
+			AND dbo.usp_get_top_center(grp.id) = #CENTER_NAME#
+		</isNotEqual>
+		-->
+	</select>
+	
+	<insert id="zigateDAO.userHistoryInsertOld" parameterClass="zigateVO">
+		INSERT INTO orkuserhistory
+		SELECT id, phoneNumber, password, firstname, recordable, 
+		getdate(),    dateDeleted,    dateDisabled,    dateUpdated, 
+		deleted, disabled, useMonitoring, logoutSupported, autoUploadSupported, 
+		appVer, osVer, IMEI, modelNo,
+		resetDate, pinNumber, resetPasswordFlag, salt, resetLimitCount,
+		phoneNumberOffice1, phoneNumberOffice2
+		FROM orkuser
+		WHERE id = #ID#
+	</insert>
+	
+	<update id="zigateDAO.userUpdate" parameterClass="zigateVO">
+		UPDATE orkuser set 
+			appVer=#APP_VER#, 
+			osVer=#OS_VER#, 
+			IMEI=#IMEI#, 
+			modelNo=#MODEL_NO#, 
+			dateUpdated=getdate()
+		where id = #ID#
+	</update>
+	
+	<select id="zigateDAO.getTime" parameterClass="zigateVO" resultClass="zigateVO">
+		SELECT	Convert(varchar(10),Getdate(),112) DB_DATE
+			, Replace(Convert(varchar(8),Getdate(),108),':','') DB_TIME
+	</select>
+	
+	<select id="zigateDAO.getVersion" parameterClass="zigateVO" resultClass="zigateVO">
+		SELECT	a.codeName as ver, b.codeName as market
+		FROM
+			(SELECT	codeName
+			FROM		orkcode
+			WHERE	codeValue = 'ver'
+			AND codeMaster = '10020') a,
+			(SELECT	codeName
+			FROM		orkcode
+		WHERE	codeValue = 'market'
+			AND codeMaster = '10021') b
+	</select>
+	
+	<select id="zigateDAO.selectUserLoginFirst" parameterClass="zigateVO" resultClass="int">
+		SELECT
+			count(*)
+		FROM orkuser usr, orkloginstring login
+		WHERE usr.id = login.user_id
+		AND usr.deleted = '0'
+		AND login.zirecxId = #USER_ID# 
+		AND usr.password = #USER_PW#
+	</select>
+	
+	<update id="zigateDAO.userHistoryInsert" parameterClass="zigateVO">
+		INSERT INTO orkUserStatus (
+			loginString, appVer, osVer, IMEI, modelNo, statusFlag, insertDate
+		) VALUES (
+			#USER_ID#, #APP_VER#, #OS_VER#, #IMEI#, #MODEL_NO#, #USER_STATUS#, getdate()
+		)
+	</update>
+	
+</sqlMap>

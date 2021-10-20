@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//iBATIS.com//DTD SQL Map Config 2.0//EN"
+    "http://www.ibatis.com/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+	<sqlMap resource="zirecx_resources/sqlmap/common/Login_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/common/Common_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/common/CmnGroup_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/common/CmnUser_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/common/CmnPrivate_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/common/CampaignPop_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/record/Record_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/system/Group_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/system/User_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/system/Grade_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/system/Access_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/system/Code_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/report/Linkage_Report_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/zigate/Zigate_SQL.xml" />
+	<sqlMap resource="zirecx_resources/sqlmap/smart/SmartPhone_SQL.xml" />
+</sqlMapConfig>
+

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+	
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<!-- <property name="driverClass" value="com.mysql.jdbc.Driver" />
+		<property name="jdbcUrl" value="jdbc:mysql://192.168.1.204:3306/morecx" /> 
+		jdbc:mysql://192.168.1.204:3306/zirecx_renewal 58.181.31.206:3306/morecx , mysql://58.181.31.206:33060/morecx -->
+		<property name="driverClass" value="com.microsoft.sqlserver.jdbc.SQLServerDriver" />
+		<!-- 김해동 테스트  -->
+		<property name="jdbcUrl" value="jdbc:sqlserver://192.168.1.36:1433;databaseName=morecx_welcomeloan;" />
+		<property name="user" value="sa" />
+		<property name="password" value="irlink00!" />
+		
+		
+		<!-- 
+		<property name="jdbcUrl" value="jdbc:sqlserver://192.168.1.167:1433;databaseName=morecx_welcomeloan;" />
+		<property name="user" value="ziphone" />
+		<property name="password" value="irlink" />
+		-->
+		
+		<property name="initialPoolSize" value="3" />
+		<property name="minPoolSize" value="3" />
+		<property name="maxPoolSize" value="50" />
+		<!-- <property name="timeout" value="0" /> -->   <!-- 0 means: no timeout -->
+		<property name="idleConnectionTestPeriod" value="200" />
+		<property name="acquireIncrement" value="1" />
+		<property name="maxStatements" value="0" />  <!-- 0 means: statement caching is turned off.  -->
+		<!-- c3p0 is very asynchronous. Slow JDBC operations are generally performed 
+	                by helper threads that don't hold contended locks. 
+			Spreading these operations over multiple threads can significantly improve performance 
+			by allowing multiple operations to be performed simultaneously -->
+		<property name="numHelperThreads" value="3" />  <!-- 3 is default -->
+	</bean>
+</beans>

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="CmnGroup">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="cmnGroupSearchVO" type="kr.co.irlink.zirecx.common.service.CmnGroupSearchVO"/>
+	<resultMap id="cmnGroupMap" class="kr.co.irlink.zirecx.common.service.CmnGroupSearchVO">
+		<result property="groupId"  column="id"/>
+	  	<result property="groupName" column="groupName"/>
+	</resultMap>
+	
+	<select id="cmnGroupSearchDAO.selectParentGroup" resultClass="String">
+		<![CDATA[
+			SELECT ISNULL((SELECT groupName FROM orkgroup WHERE id = a.parent),'') AS group_path
+			FROM orkgroup a
+			WHERE a.id = #seq#
+		]]>
+	</select>
+	
+	<select id="cmnGroupSearchDAO.subGroupSeq" parameterClass="cmnGroupSearchVO" resultClass="egovMap">
+			SELECT id
+			FROM orkgroup
+			WHERE parent IN 
+			<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+		     #arrGroupSeq[]# 
+		    </iterate>
+	</select>
+	
+	<select id="cmnGroupSearchDAO.selectGroupTreeList" parameterClass="cmnGroupSearchVO" resultClass="egovMap">
+		<!-- 
+		<isNotEqual property="strSessionLoginString" compareValue="admin">
+			<isEqual property="strAccessPolicy" compareValue="all">
+				SELECT id, parent, groupname
+			</isEqual>
+			<isNotEqual property="strAccessPolicy" compareValue="all">
+				SELECT id, CASE WHEN(id = ##) THEN 0 ELSE parent END AS parent, groupname
+			</isNotEqual>
+		</isNotEqual>
+		<isEqual property="strSessionLoginString" compareValue="admin">
+			SELECT id, parent, groupname
+		</isEqual>
+	
+		FROM orkgroup
+		WHERE securitygroup = 0
+		AND deleted = 0
+	 -->
+	
+	
+		SELECT id, parent, groupName, depth, officeCode, groupCode
+			FROM orkgroup
+			WHERE securityGroup = '0'
+			<isNotEqual property="auth" compareValue="admin">
+				<isNotEqual property="groupScope" compareValue="all">
+					<isNotEmpty property="groupSearchSeq">
+						AND id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					    	 #arrGroupSeq[]# 
+					    </iterate>
+					</isNotEmpty>
+				</isNotEqual>	
+			</isNotEqual>
+			AND deleted = 0	
+	</select>
+	
+	<select id="cmnGroupSearchDAO.selectGroupTreeSeq" parameterClass="String" resultClass="egovMap">
+		<![CDATA[
+			SELECT id, parent, groupName, depth
+			FROM orkgroup 
+			WHERE parent IN (
+				SELECT id
+				FROM orkgroup
+				WHERE parent = #strSeq# )
+		]]>
+	</select>
+	
+	<!-- 2.0 groupUp 추가  -->
+	<select id="cmnGroupSearchDAO.selectGroupCheck" parameterClass="cmnGroupSearchVO" resultMap="cmnGroupMap">
+		<![CDATA[
+			  SELECT TOP 2 id, groupName
+			  FROM orkgroup 
+			  WHERE securitygroup = 0 
+		]]>
+		
+			<isEqual property="searchType" compareValue="groupId">
+				AND id = #searchText#
+				ANd id in(
+				<![CDATA[
+					SELECT id 
+			 		FROM orkgroup 
+			  		WHERE securitygroup = 0
+			  	]]>
+				<!-- 권한관련 시작 -->
+				<isNotEqual property="strSessionLoginString" compareValue="admin">
+					<isEqual property="strAccessPolicy" compareValue="group">
+						AND id
+						<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+							#arrChildGroupId[]#
+						</iterate>
+					</isEqual>
+					<isNotEqual property="strAccessPolicy" compareValue="group">
+						<isNotEqual property="strAccessPolicy" compareValue="all">
+							<isEqual property="strAccessPolicy" compareValue="groupUp">
+								AND id
+								<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+									#arrChildGroupId[]#
+								</iterate>
+							</isEqual>
+							<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+								AND id = #strSessionGroupId#
+							</isNotEqual>
+						</isNotEqual>
+					</isNotEqual>
+				</isNotEqual>
+				<!-- 권한관련 끝 -->
+				)
+			</isEqual>
+			<isEqual property="searchType" compareValue="groupName">
+				AND groupName LIKE (#searchText# + '%')
+				ANd id in(
+				<![CDATA[
+					SELECT id 
+			 		FROM orkgroup 
+			  		WHERE securitygroup = 0
+			  	]]>
+				<!-- 권한관련 시작 -->
+				<isNotEqual property="strSessionLoginString" compareValue="admin">
+					<isEqual property="strAccessPolicy" compareValue="group">
+						AND id
+						<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+							#arrChildGroupId[]#
+						</iterate>
+					</isEqual>
+					
+					<isNotEqual property="strAccessPolicy" compareValue="group">
+						<isNotEqual property="strAccessPolicy" compareValue="all">
+							<isEqual property="strAccessPolicy" compareValue="groupUp">
+								AND id
+								<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+									#arrChildGroupId[]#
+								</iterate>
+							</isEqual>
+							<isNotEqual property="strAccessPolicy" compareValue="groupUp">
+								AND id = #strSessionGroupId#
+							</isNotEqual>
+						</isNotEqual>
+					</isNotEqual>
+				</isNotEqual>
+				<!-- 권한관련 끝 -->
+				)
+			</isEqual>
+	</select>
+	
+	<select id="cmnGroupSearchDAO.selectGroupList" parameterClass="cmnGroupSearchVO" resultClass="egovMap">
+		<![CDATA[
+			  SELECT 
+			  	  id AS groupId
+			  	, CASE WHEN (select dbo.usp_get_group_upper(id)) = '' 
+			  		THEN groupName 
+			  		ELSE ((select dbo.usp_get_group_upper(id)) + '/' + groupName) END AS parentGroupName
+			  	, groupName
+			  	, officeCode
+			  	, groupCode
+			  FROM orkgroup 
+			  WHERE securitygroup = 0
+		]]>
+			
+			<isNotEmpty property="groupSearchSeq">
+				AND id = #groupSearchSeq#
+			</isNotEmpty>
+			<isNotEmpty property="groupSearchName">
+				AND groupName LIKE (#groupSearchName# + '%')
+			</isNotEmpty>
+			
+			<!-- 권한관련 시작 -->
+			<isNotEqual property="strSessionLoginString" compareValue="admin">
+				<isEqual property="strAccessPolicy" compareValue="groupUp">
+					AND id
+					<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+						#arrChildGroupId[]#
+					</iterate>
+				</isEqual>
+			
+				<isEqual property="strAccessPolicy" compareValue="group">
+					AND id
+					<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+						#arrChildGroupId[]#
+					</iterate>
+				</isEqual>
+				
+				<isEqual property="strAccessPolicy" compareValue="own">
+					AND id = #strSessionGroupId#
+				</isEqual>
+				<!-- 
+				<isNotEqual property="strAccessPolicy" compareValue="group">
+					<isNotEqual property="strAccessPolicy" compareValue="all">
+						AND id = #strSessionGroupId#
+					</isNotEqual>
+				</isNotEqual>
+				 -->
+			</isNotEqual>
+			<!-- 권한관련 끝 -->
+			
+			ORDER BY depth, id ASC
+	</select>
+	
+	<select id="cmnGroupSearchDAO.checkGroupToCnt" parameterClass="String"  resultClass="int">
+		<![CDATA[
+			SELECT COUNT(*) as totCnt
+			FROM orkgroup 
+			WHERE parent = #seq#
+		]]>
+	</select>
+	
+	<select id="cmnGroupSearchDAO.selectParentGroupId" parameterClass="cmnGroupSearchVO" resultClass="String">
+		SELECT parentGroupId FROM orkgrouptogroup    WHERE childGroupId = #groupSearchSeq#
+	</select>
+</sqlMap>

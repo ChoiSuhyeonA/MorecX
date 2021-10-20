@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd" >
+<sqlMap namespace="RecordManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="codeSearchVO" type="kr.co.irlink.zirecx.system.service.CodeSearchVO"/>
+	<select id="codeManageDAO.selectCodeMasterList" parameterClass="codeSearchVO" resultClass="egovMap">
+		SELECT codeMaster, codeName, description, deleted
+		FROM orkcodemaster
+		WHERE 1=1
+		<isNotEmpty property="masterCodeNameSrch">
+			AND codeName = #masterCodeNameSrch#
+		</isNotEmpty>
+		<isNotEmpty property="masterCodeSrch">
+			AND codeMaster = #masterCodeSrch#
+		</isNotEmpty>
+	</select>
+	<select id="codeManageDAO.selectCodeDetailList" parameterClass="codeSearchVO" resultClass="egovMap">
+		SELECT codeMaster, codeValue, codeName, sortOrder, description, deleted
+		FROM orkcode
+		WHERE codeMaster = #masterCode#
+	</select>
+	<update id="codeManageDAO.updateCodeManageMaster" parameterClass="codeSearchVO">
+		<![CDATA[
+		UPDATE orkcodemaster SET
+			  codeName = #masterCodeName#
+			, description = #masterDetailInfo#
+			, dateUpdated = getdate()
+			, deleted = $masterDeleteYn$
+		WHERE codeMaster = #masterCode#
+		]]>
+	</update>
+	<insert id="codeManageDAO.insertCodeManageMaster" parameterClass="codeSearchVO">
+		<![CDATA[
+		INSERT INTO orkcodemaster (
+		      codeMaster
+		    , codeName
+		    , description
+		    , dateCreated
+		) VALUES (
+		      #masterCode#
+		    , #masterCodeName#
+		    , #masterDetailInfo#
+		    , getdate()
+		)
+		]]>
+	</insert>
+	<update id="codeManageDAO.updateCodeManageDetail" parameterClass="codeSearchVO">
+		<![CDATA[
+		UPDATE orkcode SET
+			  codeName = #detailCodeName#
+			, sortOrder = #detailOrderNum#
+			, description = #detailDetailInfo#
+			, dateUpdated = getdate()
+			, deleted = $detailDeleteYn$
+		WHERE codeMaster = #masterCode#
+		AND   codeValue = #detailCode#
+		]]>
+	</update>
+	<insert id="codeManageDAO.insertCodeManageDetail" parameterClass="codeSearchVO">
+		<![CDATA[
+		INSERT INTO orkcode (
+		      codeMaster
+		    , codeValue
+		    , codeName
+		    , sortOrder
+		    , description
+		    , dateCreated
+		) VALUES (
+		      #masterCode#
+		    , #detailCode#
+		    , #detailCodeName#
+		    , #detailOrderNum#
+		    , #detailDetailInfo#
+		    , getdate()
+		)
+		]]>
+	</insert>
+</sqlMap>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="GradeManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="gradeSearchVO" type="kr.co.irlink.zirecx.system.service.GradeSearchVO"/>
+
+	<select id="gradeManageDAO.selectGradePopList" parameterClass="gradeSearchVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT id, groupName
+			FROM orkgroup
+			WHERE securitygroup = 1
+		]]>
+		
+			<isNotEmpty property="gradeName">
+				AND groupName like ('%' + #gradeName# + '%')
+			</isNotEmpty>
+			<isNotEmpty property="gradeSeq">
+				AND id = #gradeSeq#
+			</isNotEmpty>
+			AND id NOT IN(1,2,3,4) 
+	</select>
+	
+	<select id="gradeManageDAO.selectGradeList" parameterClass="gradeSearchVO" resultClass="egovMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY sortOrder ASC)  AS rownum, * FROM (
+				SELECT grp.id, grp.groupName, grp.deleted, grp.sortOrder
+				FROM orkgroup grp
+				WHERE grp.securitygroup = 1
+				<isNotEmpty property="gradeSeq">
+		  			AND grp.id = #gradeSeq#
+				</isNotEmpty>
+				
+				<isNotEmpty property="gradeName">
+					AND groupName like ('%' + #gradeName# + '%')
+				</isNotEmpty>
+				
+				<isNull property="deleteYn">
+					AND grp.deleted = 0
+				</isNull>
+				AND grp.id NOT IN (1,2,3,4)
+				
+				
+				
+			) r1
+		) t1
+		WHERE t1.rownum BETWEEN #firstIndex# AND #lastIndex#
+	</select>
+	
+	<select id="gradeManageDAO.selectGradeListTotCnt" parameterClass="gradeSearchVO" resultClass="int">
+	SELECT count(*) totCnt
+        FROM orkgroup grp
+		WHERE grp.securitygroup = 1
+		<isNotEmpty property="gradeSeq">
+  			AND grp.id = #gradeSeq#
+		</isNotEmpty>
+		<isNull property="deleteYn">
+			AND grp.deleted = 0
+		</isNull>
+		AND grp.id NOT IN (1,2,3,4)
+	</select>
+	
+	<select id="gradeManageDAO.selectGradeDetail" parameterClass="gradeSearchVO" resultClass="egovMap">
+		SELECT grp.id
+		    , grp.groupname 
+		    , grp.sortOrder
+		    , grp.deleted
+	    FROM orkgroup grp 
+	    WHERE grp.id = #gradeSeq#
+	</select>
+	
+	<insert id="gradeManageDAO.insertGrade" parameterClass="gradeSearchVO">
+		<selectKey keyProperty="id" resultClass="int">
+			INSERT INTO orkgroup (
+			      groupname
+			    , securitygroup
+			    , depth
+			    , sortOrder
+			    , dateCreated
+			    , parent
+			) VALUES (
+			      #gradeNameDT#
+			    , 1
+			    , 0
+			    , #gradeSortDT#
+			    , getdate()
+			    , 0
+			)
+			
+			SELECT SCOPE_IDENTITY() as id
+		</selectKey>
+	</insert>
+	
+	<update id="gradeManageDAO.updateGrade" parameterClass="gradeSearchVO">
+		<![CDATA[
+			UPDATE orkgroup SET
+				  groupName = #gradeNameDT#
+				, sortOrder = #gradeSortDT#
+			    , deleted = $deleteYnDT$
+			WHERE id = #gradeSeq#
+		]]>
+	</update>
+</sqlMap>

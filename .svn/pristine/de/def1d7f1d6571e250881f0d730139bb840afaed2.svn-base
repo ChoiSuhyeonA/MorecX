@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="CmnPrivate">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="cmnPrivateVO" type="kr.co.irlink.zirecx.common.service.CmnPrivateVO"/>
+	
+	<select id="cmnPrivateDAO.selectPrivateList" parameterClass="cmnPrivateVO" resultClass="egovMap">
+			SELECT 
+				ppt.name, ptaAndacp.scope, ptaAndacp.securityGroup_id
+			FROM orkprivpoint ppt
+			LEFT OUTER JOIN (
+						SELECT
+							pta.privPointId, acp.scope, acp.securityGroup_id
+						FROM orkprivpointtoaccesspolicy pta, orkaccesspolicy acp
+						WHERE pta.accessPolicyId = acp.id 
+						AND acp.securityGroup_id = #strSecurityGroupId#
+			) ptaAndacp 
+			ON (ptaAndacp.privPointId = ppt.id)
+			WHERE ppt.name
+			<iterate prepend="IN" property="privName" open="(" close=")" conjunction=",">
+				#privName[]#
+			</iterate>
+
+	</select>
+	
+	<select id="cmnPrivateDAO.selectChildGroupId01" parameterClass="cmnPrivateVO" resultClass="egovMap">
+		SELECT childGroupId FROM orkgrouptogroup 
+		WHERE parentGroupId = #strSessionGroupId#
+	</select>
+	
+	<select id="cmnPrivateDAO.selectChildGroupId02" parameterClass="cmnPrivateVO" resultClass="egovMap">
+		SELECT childGroupId FROM orkgrouptogroup 
+		WHERE parentGroupId 
+		<iterate prepend="IN" property="arrChildGroupId" open="(" close=")" conjunction=",">
+			#arrChildGroupId[]#
+		</iterate>
+	</select>
+	
+	<select id="cmnPrivateDAO.selectParentGroupId" parameterClass="cmnPrivateVO" resultClass="String">
+		SELECT parentGroupId FROM orkgrouptogroup    WHERE childGroupId = #strSessionGroupId#
+	</select>
+</sqlMap>

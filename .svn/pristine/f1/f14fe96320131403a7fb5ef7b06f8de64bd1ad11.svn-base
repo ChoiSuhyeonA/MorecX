@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="RecordManage">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="groupSearchVO" type="kr.co.irlink.zirecx.system.service.GroupSearchVO"/>
+
+	<select id="groupManageDAO.selectParentGroup" resultClass="String">
+		<![CDATA[
+			SELECT ISNULL((SELECT groupName FROM orkgroup WHERE id = a.parent),'') AS group_path
+			FROM orkgroup a
+			WHERE a.id = #seq#
+		]]>
+	</select>
+	
+	<select id="groupManageDAO.subGroupSeq" parameterClass="groupSearchVO" resultClass="egovMap">
+			SELECT id
+			FROM orkgroup
+			WHERE parent IN 
+			<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+		     #arrGroupSeq[]# 
+		    </iterate>
+	</select>
+	
+	<select id="groupManageDAO.selectGroupTreeList" parameterClass="groupSearchVO" resultClass="egovMap">
+		SELECT id, parent, groupName, depth
+			FROM orkgroup 
+
+			<isEqual property="auth" compareValue="admin">
+			WHERE securityGroup = '0'
+			</isEqual>
+			<isNotEqual property="auth" compareValue="admin">
+			WHERE securityGroup = '0'	
+				<isNotEqual property="groupScope" compareValue="all">
+					<isNotEmpty property="groupSearchSeq">
+						AND id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+					    	 #arrGroupSeq[]# 
+					    </iterate>
+					</isNotEmpty>
+				</isNotEqual>					 
+			</isNotEqual>	
+			AND deleted = 0
+	</select>
+	
+	<select id="groupManageDAO.selectGroupTreeSeq" parameterClass="String" resultClass="egovMap">
+		<![CDATA[
+			SELECT id, parent, groupName, depth
+			FROM orkgroup 
+			WHERE parent IN (
+				SELECT id
+				FROM orkgroup
+				WHERE parent = #strSeq# )
+		]]>
+	</select>
+	
+	
+	<!-- 김해동 수정 2020.07.01 -->
+	<select id="groupManageDAO.selectGroupList" parameterClass="groupSearchVO" resultClass="egovMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY $orderKey$ $orderType$)  AS rownum, * FROM (
+				SELECT
+					grp.id, grp.groupname,(select dbo.usp_get_group_upper(grp.id)) AS groupnameupper,grp.deleted
+				FROM orkgroup grp	
+				WHERE grp.securitygroup = 0
+				
+				<isNotEmpty property="schGroupId">
+					<isNotEmpty property="hidAccessPolicy">
+						<isEqual property="hidAccessPolicy" compareValue="own">
+							AND grp.id = #schGroupId#
+						</isEqual>
+						<isNotEqual property="hidAccessPolicy" compareValue="own">
+							AND grp.id IN 
+							<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+								#arrGroupSeq[]# 
+							</iterate>
+						</isNotEqual>
+					</isNotEmpty> 
+					
+					<isEmpty property="hidAccessPolicy"> 
+						AND grp.id IN 
+						<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+							#arrGroupSeq[]# 
+						</iterate>
+					</isEmpty> 
+					
+				</isNotEmpty>
+				
+				<isEmpty property="schGroupId">
+					<isNotEmpty property="hidAccessPolicy">
+						<isEqual property="hidAccessPolicy" compareValue="group">
+				            AND grp.id IN 
+				            <iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				              #arrGroupSeq[]# 
+				            </iterate>
+				          </isEqual>
+				          
+				          <isNotEqual property="hidAccessPolicy" compareValue="group">
+							<isNotEqual property="hidAccessPolicy" compareValue="groupUp">
+								<isNotEqual property="hidAccessPolicy" compareValue="all">
+									AND login.zirecxId = #auth#
+								</isNotEqual>
+							</isNotEqual>
+							
+							<!-- 김해동 추가  -->
+							<isEqual property="hidAccessPolicy" compareValue="groupUp">
+								AND grp.id IN 
+								<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+									#arrGroupSeq[]# 
+								</iterate>
+							</isEqual>
+							<!--  끝  -->
+						  </isNotEqual>
+					</isNotEmpty>
+				</isEmpty>
+				
+			) r1
+		) t1
+		WHERE t1.rownum BETWEEN #firstIndex# AND #lastIndex#
+	</select>
+	
+	<select id="groupManageDAO.selectGroupDetail" parameterClass="groupSearchVO" resultClass="egovMap">
+		SELECT grp.id
+		    , grp.groupname 
+		    ,(select dbo.usp_get_group_upper(grp.id)) AS groupnameupper 
+		    ,grp.deleted
+		    ,parent
+		    ,ISNULL(lic.license_cnt, 0) as licenseCnt
+		    ,grp.listenSupported
+		    ,ISNULL(grp.storagePeriod, 0) as storagePeriod
+		    ,grp.officeCode
+		    ,grp.groupCode
+	    FROM orkgroup grp LEFT OUTER JOIN orklicense lic ON lic.group_id = grp.id 
+	    WHERE grp.id = #groupSeq#
+	</select>
+	
+	<select id="groupManageDAO.selectGroupUpper" parameterClass="groupSearchVO" resultClass="egovMap">
+		SELECT (select dbo.usp_get_group_upper2(grp.id)) AS groupnameupper 
+	    FROM orkgroup grp 
+	    WHERE grp.id = #groupSeq#
+	</select>
+	
+	<select id="groupManageDAO.selectGroupListTotCnt" parameterClass="groupSearchVO" resultClass="int">
+		SELECT count(*) totCnt
+	    FROM orkgroup grp 
+	    WHERE grp.securitygroup = 0 
+	   <isNotEmpty property="schGroupId">
+			AND grp.id IN 
+			<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				#arrGroupSeq[]# 
+			</iterate>
+		</isNotEmpty>
+		
+		
+	
+	<!-- 
+		SELECT count(*) totCnt 
+		FROM orkgroup grp 
+		WHERE grp.securitygroup = 0
+		
+		<isNotEmpty property="groupSeq">
+			AND grp.id IN 
+			<iterate property="arrGroupSeq" open="(" close=")" conjunction="," >
+				#arrGroupSeq[]# 
+			</iterate>
+		</isNotEmpty> -->
+	</select>
+	
+	<delete id="groupManageDAO.deleteChildGroup" parameterClass="groupSearchVO">
+		DELETE FROM orkgrouptogroup
+		WHERE childGroupId = #groupSeqDT#
+	</delete>
+	
+	<select id="groupManageDAO.selectGroupDepth" parameterClass="groupSearchVO" resultClass="egovMap">
+		SELECT depth, sortOrder FROM orkgroup
+		WHERE id = #groupSeqUpperDT#
+	</select>
+	
+	<insert id="groupManageDAO.insertGroup" parameterClass="groupSearchVO">
+		<selectKey keyProperty="id" resultClass="int">
+			INSERT INTO orkgroup (
+			      groupname
+			    , securitygroup
+			    , depth
+			    , sortOrder
+			    , dateCreated
+			    , parent
+			    , listenSupported
+			    , storagePeriod
+			    , officeCode
+			    , groupCode
+			) VALUES (
+			      #groupNameDT#
+			    , 0
+			    , #groupDepthDT#
+			    , #groupSortOrderDT#
+			    , getdate()
+			    , #groupSeqUpperDT#
+			    , #listenSupported#
+			    , #storagePeriod#
+			    , #officeCode#
+			    , #groupCode#
+			)
+			
+			SELECT SCOPE_IDENTITY() as id
+		</selectKey>
+	</insert>
+	
+	<insert id="groupManageDAO.insertGroupToGroup" parameterClass="groupSearchVO">
+		<![CDATA[
+		INSERT INTO orkgrouptogroup (
+				  parentGroupId
+				, childGroupId
+		) VALUES (
+				  #groupSeqUpperDT#
+				, #lastInsertID#
+		)
+		]]>
+	</insert>
+	
+	<update id="groupManageDAO.updateSortOrder" parameterClass="groupSearchVO">
+		<![CDATA[
+			UPDATE orkgroup SET
+				sortOrder = #lastInsertID#
+			WHERE id = #lastInsertID#
+		]]>
+	</update>
+	
+	<update id="groupManageDAO.updateGroup" parameterClass="groupSearchVO">
+		<![CDATA[
+		UPDATE orkgroup SET
+			  groupName = #groupNameDT#
+			, dateUpdated = getdate()
+			, deleted = $deleteYnDT$
+			, depth = #groupDepthDT#
+			, parent = #groupSeqUpperDT#
+			, sortOrder = #groupSortOrderDT#
+			, listenSupported = #listenSupported#
+			, storagePeriod = #storagePeriod#
+			, officeCode = #officeCode#
+			, groupCode = #groupCode#
+		WHERE id = #groupSeqDT#
+		]]>
+	</update>
+	
+	<insert id="groupManageDAO.insertChildGroup" parameterClass="groupSearchVO">
+		INSERT INTO orkgrouptogroup (
+				  parentGroupId
+				, childGroupId
+		) VALUES (
+				  #groupSeqUpperDT#
+				, #groupSeqDT#
+		)
+	</insert>
+	
+	<select id="groupManageDAO.selectLicenseCnt" parameterClass="groupSearchVO" resultClass="string">
+		SELECT ISNULL(license_cnt, 0) as licenseCnt 
+		FROM orklicense 
+		where group_id = #groupSeqDT#
+	</select>
+	
+	<update id="groupManageDAO.updateLicense" parameterClass="groupSearchVO">
+		<![CDATA[
+		UPDATE orklicense SET
+			  license_cnt = #licenseCnt#
+			  , dateModified = getdate()
+		WHERE group_id = #groupSeqDT#
+		]]>
+	</update>
+	
+	<insert id="groupManageDAO.insertLicense" parameterClass="groupSearchVO">
+		<![CDATA[
+		INSERT INTO orklicense (
+				  group_id
+				, license_cnt
+				, create_user_id
+				, dateCreated
+		) VALUES (
+				  #groupSeqDT#
+				, #licenseCnt#
+				, #auth#
+				, getdate()
+		)
+		]]>
+	</insert>
+	
+	<insert id="groupManageDAO.insertLicenseHist" parameterClass="groupSearchVO">
+		<![CDATA[
+		INSERT INTO orklicensehist (
+				id
+				, group_id
+				, license_cnt
+				, create_user_id
+				, dateCreated
+				, dateModified
+		) select id, group_id, license_cnt, #auth#, dateCreated, getdate() from orklicense 
+		where group_id = #groupSeqDT#
+		]]>
+	</insert>
+	
+</sqlMap>

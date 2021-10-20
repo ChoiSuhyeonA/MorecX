@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Login">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="loginVO" type="kr.co.irlink.zirecx.login.service.LoginVO"/>
+	<typeAlias  alias="changePasswordVO" type="kr.co.irlink.zirecx.login.service.ChangePasswordVO"/>
+
+	<resultMap id="loginMap" class="kr.co.irlink.zirecx.login.service.LoginVO">
+		<result property="id"					column="id"/>
+		<result property="idtouserid"			column="idtouserid"/>
+		<result property="secuGrpId"			column="secuGrpId"/>
+		<result property="currentDate"			column="current_date"/>
+		<result property="currentTime"			column="current_time"/>
+		<result property="firstname"			column="firstname"/>
+		<result property="loginString"			column="loginString"/>
+		<result property="zirecxId"				column="zirecxId"/>
+		<result property="groupName"			column="groupName"/>
+	</resultMap>
+	
+	<resultMap id="idMap" class="kr.co.irlink.zirecx.login.service.LoginVO">
+		<result property="idtouserid"			column="idtouserid"/>
+		<result property="zirecxId"				column="zirecxId"/>
+	</resultMap>
+
+	<!-- 2.0 부모 조직 조회  추가   -->
+	<select id="loginDAO.selectUserLogin" parameterClass="loginVo" resultClass="egovMap">
+		<![CDATA[
+			SELECT 
+				a.*,c.id, c.groupName, d.parentGroupId
+			FROM
+				(
+				SELECT 
+					  usr.id AS idtouserid
+					, login.loginString
+					, usr.firstname
+					, CONVERT(CHAR(10), CURRENT_TIMESTAMP, 23) AS loginDate
+					, CONVERT(CHAR(8), CURRENT_TIMESTAMP, 24) AS loginTime
+					, grp.id AS secuGrpId
+					, login.zirecxId
+					, usr.salt
+					, usr.password
+					, usr.resetPasswordFlag
+				FROM orkuser usr
+				 	, orkloginstring login
+				 	, orkgrouptouser gtu
+				RIGHT OUTER JOIN orkgroup grp ON (grp.id = gtu.groupId) AND grp.securityGroup = 1
+				WHERE usr.id = login.user_id
+				AND gtu.userId = usr.id
+				AND usr.deleted = '0'
+				AND login.zirecxId = #strZirecxId#
+			) a 
+			LEFT OUTER JOIN orkgrouptouser b ON (idtouserid = b.userId) 
+			LEFT OUTER JOIN orkgroup c ON ( b.groupId = c.id ) AND  c.securityGroup = 0
+			LEFT OUTER JOIN orkgrouptogroup d ON (d.childGroupId = c.id)
+			ORDER BY c.id ASC
+		]]>
+	</select>
+	
+	<select id="loginDAO.selectMenuTop" parameterClass="String" resultClass="egovMap">
+		<![CDATA[
+			SELECT MENU_SEQ, 
+			FROM TB_MENU 
+			WHERE MENU_SEQ IN (
+				SELECT PARENT_MENU_SEQ 
+				FROM TB_MENU a,
+				     TB_MENU_AUTH b,
+				     TB_USER c
+				WHERE a.MENU_SEQ = b.MENU_SEQ
+				  AND b.USER_GRADE = c.USER_GRADE
+				  AND a.MENU_GUBUN = 'M'
+				  AND a.MENU_DEPTH = '1'
+				  AND a.DELETE_YN = 'N'
+				  AND c.USER_SEQ = #userSeq#
+			)
+			  AND MENU_DEPTH = '0'
+			  AND DELETE_YN = 'N'
+			ORDER BY SORT_ORDER
+		]]>
+	</select>
+
+	<select id="loginDAO.selectMenuSub" parameterClass="HashMap" resultClass="egovMap">
+		<![CDATA[
+			SELECT * 
+			FROM TB_MENU a,
+			     TB_MENU_AUTH b,
+			     TB_USER c
+			WHERE a.MENU_SEQ = b.MENU_SEQ
+			  AND b.USER_GRADE = c.USER_GRADE
+			  AND a.PARENT_MENU_SEQ = #parentMenuSeq#
+			  AND a.MENU_GUBUN = 'M'
+			  AND a.MENU_DEPTH = '1'
+			  AND a.DELETE_YN = 'N'
+			  AND c.USER_SEQ = #userSeq#
+			ORDER BY SORT_ORDER
+		]]>
+	</select>
+	
+	<select id="loginDAO.selectUserId" parameterClass="loginVo" resultMap="idMap">
+		<![CDATA[
+			SELECT count(*) zirecxId, a.idtouserid  FROM
+			(SELECT usr.id AS idtouserid, login.loginString, usr.firstname, CONVERT(CHAR(10), CURRENT_TIMESTAMP, 23) as  date1, CONVERT(CHAR(8), CURRENT_TIMESTAMP, 8) as time1
+			,grp.id AS secuGrpId, login.zirecxId
+			FROM orkuser usr,
+			orkloginstring login,
+			orkgrouptouser gtu
+			RIGHT OUTER JOIN orkgroup grp ON (grp.id = gtu.groupId) AND grp.securityGroup = 1
+			WHERE usr.id = login.user_id
+			AND gtu.userId = usr.id
+			AND  usr.deleted = '0'
+			AND  login.zirecxId = #userId#
+			) a 
+			LEFT OUTER JOIN orkgrouptouser b ON (idtouserid = b.userId) 
+			]]>
+			<isNotEqual property="userId" compareValue="admin">
+			<![CDATA[
+				INNER JOIN orkgroup c ON ( b.groupId = c.id) AND  c.securityGroup = 0
+			]]>
+				</isNotEqual>
+				<isEqual property="userId" compareValue="admin">
+			<![CDATA[
+				LEFT OUTER JOIN orkgroup c ON ( b.groupId = c.id) AND  c.securityGroup = 0
+			]]>
+				</isEqual>
+				group by a.idtouserid
+	</select>
+	
+	<select id="loginDAO.selectSecuCnt" parameterClass="loginVo" resultClass="int">
+		<![CDATA[
+			SELECT count(*) secu_cnt FROM
+			orksecurity
+			WHERE encryption = '1'
+			]]>
+	</select>
+
+	<select id="loginDAO.selectUserCnt" parameterClass="changePasswordVO" resultClass="int">
+		<![CDATA[
+			SELECT count(*) user_cnt FROM
+			(SELECT usr.id AS idtouserid, login.loginString, usr.firstname, CONVERT(CHAR(10), CURRENT_TIMESTAMP, 23) as  date1, CONVERT(CHAR(8), CURRENT_TIMESTAMP, 8) as time1
+			,grp.id AS secuGrpId, login.zirecxId
+			FROM orkuser usr,
+			orkloginstring login,
+			orkgrouptouser gtu
+			RIGHT OUTER JOIN orkgroup grp ON (grp.id = gtu.groupId) AND grp.securityGroup = 1
+			WHERE usr.id = login.user_id
+			AND gtu.userId = usr.id
+			AND  usr.deleted = '0'
+			AND  login.zirecxId = #userId#
+			AND  usr.password = #userCurrentPassword#
+			) a 
+			LEFT OUTER JOIN orkgrouptouser b ON (idtouserid = b.userId) 
+			]]>
+			<isNotEqual property="userId" compareValue="admin">
+			<![CDATA[
+				INNER JOIN orkgroup c ON ( b.groupId = c.id) AND  c.securityGroup = 0
+			]]>
+				</isNotEqual>
+				<isEqual property="userId" compareValue="admin">
+			<![CDATA[
+				LEFT OUTER JOIN orkgroup c ON ( b.groupId = c.id) AND  c.securityGroup = 0
+			]]>
+				</isEqual>
+				group by a.idtouserid
+	</select>
+
+	<update id="loginDAO.updatePassword" parameterClass="changePasswordVO">
+		<![CDATA[
+			UPDATE orkuser SET
+			password = #userNewPassword#
+			, salt = #salt#
+			, dateUpdated = getdate()
+			, resetPasswordFlag = 'N'
+			WHERE id = #idtouserid#
+		]]>
+	</update>
+	
+	<select id="mainDAO.selectStartMenu" parameterClass="String" resultClass="String">
+		<![CDATA[
+			SELECT TOP 1 action FROM orkprivpoint opp, 
+			(SELECT oap.scope FROM orkprivpoint opp
+			LEFT OUTER JOIN orkprivpointtoaccesspolicy opa ON opp.id = opa.privPointId
+			LEFT OUTER JOIN orkaccesspolicy oap ON opa.accessPolicyId = oap.id
+			WHERE opp.name = '[기능]권한별메뉴설정'
+			AND oap.securityGroup_id=#strStartMenu#) a WHERE opp.id = a.scope
+		]]>
+	</select>
+	
+	
+	<!-- 2.0 삭제 권한 제거 조건 추가  -->
+	<select id="loginDAO.selectUserAuth" parameterClass="loginVo" resultClass="egovMap">
+		<![CDATA[
+			select a.name, case when b.securityGroup_id = #secuGrpId# then 'block' else 'none' end as security_group_id 
+			from orkprivpoint a left outer join (
+				SELECT a.name, b.privPointId, b.accessPolicyId, c. id, c.scope, c.securityGroup_id 
+				FROM orkaccesspolicy c, orkprivpointtoaccesspolicy b 
+				    right OUTER JOIN orkprivpoint a ON a.id = b.privPointId 
+				where  c.id = b.accessPolicyId and c.securityGroup_id = #secuGrpId# 
+				)b on a.name = b.name 
+		   where a.deleted = 0 	
+		   order by a.id ASC
+		]]>
+	</select>
+	
+	<select id="loginDAO.selectUserLoginFirst" parameterClass="loginVo" resultClass="int">
+		SELECT
+			count(*)
+		FROM orkuser usr, orkloginstring login
+		WHERE usr.id = login.user_id
+		AND usr.deleted = '0'
+		AND login.zirecxId = #strZirecxId# 
+		AND usr.password = #strPassword#
+	</select>
+	
+	<select id="loginDAO.selectUserPhoneNumber" parameterClass="changePasswordVO" resultClass="egovMap">
+		SELECT
+			distinct(usr.phoneNumber), usr.id
+		FROM orkuser usr, orkloginstring login
+		WHERE usr.id = login.user_id
+		AND login.zirecxId = #userId#
+	</select>
+	
+	<update id="loginDAO.updatePinNumber" parameterClass="changePasswordVO">
+		UPDATE orkuser SET
+			pinNumber = #pinNumber#
+		WHERE id = #id#
+	</update>
+	
+	<select id="loginDAO.selectPinNumberConfirm" parameterClass="changePasswordVO" resultClass="egovMap">
+		SELECT
+			distinct(usr.phoneNumber), usr.id, usr.resetLimitCount, ISNULL(usr.resetDate, '00000000') as resetDate, CONVERT(VARCHAR, GETDATE(), 112) as today
+		FROM orkuser usr, orkloginstring login
+		WHERE usr.id = login.user_id
+		AND login.zirecxId = #userId#
+		AND usr.pinNumber = #pinNumber#
+	</select>
+	
+	<update id = "loginDAO.updateRandomPassword" parameterClass="changePasswordVO">
+		UPDATE orkuser SET
+			password = #userRandomPassword#
+			, salt = #salt#
+			, dateUpdated = getdate()
+			, resetDate = #resetDate#
+			, resetPasswordFlag = 'Y'
+			, resetLimitCount = #resetLimitCount#
+		WHERE id = #id#
+	</update>
+	
+</sqlMap>
